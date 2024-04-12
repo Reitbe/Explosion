@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "InputActionValue.h"
 #include "DefaultCharacter.generated.h"
+
 
 UCLASS()
 class EXPLOSION_API ADefaultCharacter : public ACharacter
@@ -26,4 +28,28 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+
+// PlayerController Section
+protected:
+	APlayerController* PlayerController;
+
+
+// Input Section
+protected:
+	UPROPERTY(EditAnywhere, Category = "Enhanced Input")
+	class UInputMappingContext* InputMappingContext;
+	
+	UPROPERTY(EditAnywhere, Category = "Enhanced Input")
+	class UInputAction* Moving;
+
+	void Move(const FInputActionValue& Value);
+
+
+// Camera Section
+protected:
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
+	class USpringArmComponent* SpringArm;
+
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
+	class UCameraComponent* Camera;
 };
