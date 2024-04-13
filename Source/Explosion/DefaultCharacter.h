@@ -42,7 +42,14 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input")
 	class UInputAction* Moving;
 
+	UPROPERTY(EditAnyWhere, Category = "Enhanced Input")
+	class UInputAction* Jumping;
+
+	UPROPERTY(EditAnyWhere, Category = "Enhanced Input")
+	class UInputAction* Looking;
+
 	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
 
 
 // Camera Section
