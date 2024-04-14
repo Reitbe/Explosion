@@ -109,9 +109,12 @@ void ADefaultCharacter::Move(const FInputActionValue& Value)
 		float SideValue = Value.Get<FVector2D>().X;
 
 		// 방향
-		FVector FowardDirection = FRotationMatrix(PlayerController->GetControlRotation()).GetScaledAxis(EAxis::X);
-		FVector SideDirection = FRotationMatrix(PlayerController->GetControlRotation()).GetScaledAxis(EAxis::Y);
+		const FRotator Rotation = PlayerController->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
+		FVector FowardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		FVector SideDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		
 		AddMovementInput(FowardDirection, FowardValue);
 		AddMovementInput(SideDirection, SideValue);
 	}	
