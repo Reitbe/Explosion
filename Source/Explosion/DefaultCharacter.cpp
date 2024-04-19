@@ -22,7 +22,7 @@ ADefaultCharacter::ADefaultCharacter()
 
 	// 캐릭터 회전 설정
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 700.0f, 0.0f); 
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 200.0f, 0.0f); 
 
 	// Camera Setting
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));

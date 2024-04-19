@@ -19,12 +19,20 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Super::NativeUpdateAnimation(DeltaSeconds);
 	if (Character) 
 	{
+		// Jump
 		IsInAir = Character->GetCharacterMovement()->IsFalling();
+
+		// Movement
+		IsMoving = Character->GetCharacterMovement()->IsMovingOnGround();
 
 		FVector velocity = Character->GetVelocity();
 		velocity = FVector(velocity.X, velocity.Y, 0.0f);
 
 		MovementSpeed = FVector(velocity.X, velocity.Y, 0.0f).Size();
-		MovementDirection = CalculateDirection(velocity, Character->GetActorRotation());
+		//MovementDirection = CalculateDirection(velocity, Character->GetActorRotation());
+		
+		// Aim
+		ControllerYaw = Character->GetControlRotation().Yaw;
+		ControllerPitch = Character->GetControlRotation().Pitch;
 	}
 }
