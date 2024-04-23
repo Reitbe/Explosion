@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "DefaultCharacter.h"
+#include "Explosion/Character/EPCharacterPlayer.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
@@ -11,20 +11,13 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 
-// Sets default values
-ADefaultCharacter::ADefaultCharacter()
+AEPCharacterPlayer::AEPCharacterPlayer()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
-	// 컨트롤러 회전 설정
-	bUseControllerRotationYaw = false; 
 
-	// 캐릭터 회전 설정
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 200.0f, 0.0f); 
-
-	// Camera Setting
+	// 카메라 설정
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	SpringArm->bUsePawnControlRotation = true;
@@ -33,7 +26,7 @@ ADefaultCharacter::ADefaultCharacter()
 	Camera->SetupAttachment(SpringArm);
 	Camera->bUsePawnControlRotation = false;
 
-	// Load Input Asset
+	// 에셋 로드
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> InputMappingContextFinder
 	(TEXT("/Game/Input/IMC_Character.IMC_Character"));
 	if (InputMappingContextFinder.Succeeded())
@@ -57,50 +50,43 @@ ADefaultCharacter::ADefaultCharacter()
 
 	static ConstructorHelpers::FObjectFinder<UInputAction> InputActionJumpFinder
 	(TEXT("/Game/Input/IA_Jump.IA_Jump"));
-	if (InputActionJumpFinder.Succeeded()) 
+	if (InputActionJumpFinder.Succeeded())
 	{
 		Jumping = InputActionJumpFinder.Object;
 	}
 }
 
-// Called when the game starts or when spawned
-void ADefaultCharacter::BeginPlay()
+void AEPCharacterPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	PlayerController = Cast<APlayerController>(GetController());
-	if (PlayerController != nullptr) 
+	if (PlayerController != nullptr)
 	{
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
 		if (Subsystem != nullptr) {
 			Subsystem->AddMappingContext(InputMappingContext, 0);
 		}
 	}
-
-
 }
 
-// Called every frame
-void ADefaultCharacter::Tick(float DeltaTime)
+void AEPCharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
-// Called to bind functionality to input
-void ADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		Input->BindAction(Moving, ETriggerEvent::Triggered, this, &ADefaultCharacter::Move);
-		Input->BindAction(Looking, ETriggerEvent::Triggered, this, &ADefaultCharacter::Look);
+		Input->BindAction(Moving, ETriggerEvent::Triggered, this, &AEPCharacterPlayer::Move);
+		Input->BindAction(Looking, ETriggerEvent::Triggered, this, &AEPCharacterPlayer::Look);
 		Input->BindAction(Jumping, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 	}
-
 }
 
-void ADefaultCharacter::Move(const FInputActionValue& Value)
+void AEPCharacterPlayer::Move(const FInputActionValue& Value)
 {
 	if (PlayerController)
 	{
@@ -114,13 +100,13 @@ void ADefaultCharacter::Move(const FInputActionValue& Value)
 
 		FVector FowardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		FVector SideDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		
+
 		AddMovementInput(FowardDirection, FowardValue);
 		AddMovementInput(SideDirection, SideValue);
-	}	
+	}
 }
 
-void ADefaultCharacter::Look(const FInputActionValue& Value)
+void AEPCharacterPlayer::Look(const FInputActionValue& Value)
 {
 	if (PlayerController)
 	{

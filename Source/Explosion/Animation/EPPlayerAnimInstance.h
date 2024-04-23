@@ -4,15 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "PlayerAnimInstance.generated.h"
+#include "EPPlayerAnimInstance.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class EXPLOSION_API UPlayerAnimInstance : public UAnimInstance
+class EXPLOSION_API UEPPlayerAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
+
+public:
+	UEPPlayerAnimInstance();
 
 protected:
 	virtual void NativeInitializeAnimation() override;
@@ -20,21 +23,40 @@ protected:
 
 
 protected: 
+// Character
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))	
-	class ADefaultCharacter* Character;
+	TObjectPtr<class AEPCharacterPlayer> Character;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	bool IsInAir;
+	TObjectPtr<class UCharacterMovementComponent> CharacterMovement;
+
+// Jumping
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	uint8 bIsJumping : 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	bool IsMoving;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	float MovementSpeed;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	float MovementDirection;
+	uint8 bIsFalling : 1;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	float JumpingThreshold;
+
+// Moving
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	uint8 bIsMoving : 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	uint8 bIsIdle : 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	FVector Velocity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	float GroundSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	float MovementThreshold;
+
+// Aiming
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
 	float ControllerYaw;
 
