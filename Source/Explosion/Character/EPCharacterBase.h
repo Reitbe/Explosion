@@ -21,4 +21,14 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+
+// UI
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UWidgetComponent> WidgetComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEPNameTagWidget> NameTagWidget;
+
 };

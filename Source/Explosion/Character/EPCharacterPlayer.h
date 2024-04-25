@@ -57,4 +57,6 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<class UCameraComponent> Camera;
+
+	
 };

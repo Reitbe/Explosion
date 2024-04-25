@@ -2,6 +2,8 @@
 
 
 #include "EPCharacterBase.h"
+#include "Components/WidgetComponent.h"
+#include "Explosion/UI/EPNameTagWidget.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
@@ -22,12 +24,28 @@ AEPCharacterBase::AEPCharacterBase()
 	// Mesh 설정
 	GetMesh() ->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+
+	// NameTag 설정
+	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
+	WidgetComponent->SetupAttachment(GetMesh());
+	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
+
+	static ConstructorHelpers::FClassFinder<UEPNameTagWidget> NameTagWidgetFinder(TEXT("/Game/UI/WBP_NameTagWidget.WBP_NameTagWidget_C"));
+	if (NameTagWidgetFinder.Class)
+	{
+		UE_LOG(LogTemp, Log, TEXT("EPCharacterBase, 클래스 있음."));
+		WidgetComponent->SetWidgetClass(NameTagWidgetFinder.Class);
+		WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		WidgetComponent->SetDrawSize(FVector2D(200.0f, 50.0f));
+		WidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 // Called when the game starts or when spawned
 void AEPCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
 }
 
 // Called every frame
