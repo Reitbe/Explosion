@@ -2,6 +2,7 @@
 
 
 #include "Explosion/Character/EPCharacterPlayer.h"
+#include "Explosion/Animation/EPPlayerAnimInstance.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
@@ -10,6 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "TimerManager.h"
 
 AEPCharacterPlayer::AEPCharacterPlayer()
 {
@@ -54,6 +56,32 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	{
 		Jumping = InputActionJumpFinder.Object;
 	}
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimationBlueprintFinder
+	(TEXT("/Game/Animation/AnimationBlueprint/ABP_Player.ABP_Player_C"));
+	if (AnimationBlueprintFinder.Class)
+	{
+		// 애니메이션 세팅
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(AnimationBlueprintFinder.Class);
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> InputActionAimingBombFinder
+	(TEXT("/Game/Input/IA_AimingBomb.IA_AimingBomb"));
+	if (InputActionAimingBombFinder.Succeeded())
+	{
+		AimingBomb = InputActionAimingBombFinder.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> InputActionThrowingBombFinder
+	(TEXT("/Game/Input/IA_ThrowingBomb.IA_ThrowingBomb"));
+	if (InputActionThrowingBombFinder.Succeeded())
+	{
+		ThrowingBomb = InputActionThrowingBombFinder.Object;
+	}
+
+	// 폭탄 세팅
+	DamageMultiplier = 1.0f;
 }
 
 void AEPCharacterPlayer::BeginPlay()
@@ -67,11 +95,15 @@ void AEPCharacterPlayer::BeginPlay()
 			Subsystem->AddMappingContext(InputMappingContext, 0);
 		}
 	}
+
+	AimState = EAimState::AS_Idle;
 }
 
 void AEPCharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	//FString str = FString::Printf(TEXT("%f"), Cast<UEPPlayerAnimInstance>(GetMesh()->GetAnimInstance())->ControllerPitch);
+	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
 }
 
 void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -83,6 +115,9 @@ void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		Input->BindAction(Moving, ETriggerEvent::Triggered, this, &AEPCharacterPlayer::Move);
 		Input->BindAction(Looking, ETriggerEvent::Triggered, this, &AEPCharacterPlayer::Look);
 		Input->BindAction(Jumping, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		Input->BindAction(AimingBomb, ETriggerEvent::Started, this, &AEPCharacterPlayer::AimingOn);
+		Input->BindAction(AimingBomb, ETriggerEvent::Completed, this, &AEPCharacterPlayer::AimingOff);
+		Input->BindAction(ThrowingBomb, ETriggerEvent::Started, this, &AEPCharacterPlayer::Throwing);
 	}
 }
 
@@ -115,3 +150,59 @@ void AEPCharacterPlayer::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(Value.Get<FVector2D>().Y);
 	}
 }
+
+void AEPCharacterPlayer::AimingOn()
+{
+	AimState = EAimState::AS_Aiming;
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("눌렀다!"));
+	GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
+		{
+			DamageMultiplier = 2.0f;
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("초기 2초 타이머"));
+		}
+	), 2.0f, false);
+}
+
+void AEPCharacterPlayer::AimingOff()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("해방!!"));
+	GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
+	DamageMultiplier = 1.0f;
+	AimState = EAimState::AS_Idle;
+}
+
+void AEPCharacterPlayer::Throwing()
+{
+	// 미조준 상태 - 타이머 작동X
+	if (AimState == EAimState::AS_Idle) 
+	{	
+		DamageMultiplier = 1.0f;
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준 없이 던져"));
+	}
+	// 조준 상태 - 타이머 작동O
+	else
+	{
+		// 풀충전
+		if ((DamageMultiplier == 2.0f))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("풀충전"));
+		}
+		// 애매 충전
+		else 
+		{
+			DamageMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
+			FString str = FString::Printf(TEXT("애매충전 - %f"), DamageMultiplier);
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
+		}
+
+		DamageMultiplier = 1.0f;
+		GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
+		GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				DamageMultiplier = 2.0f;
+			}
+		), 2.0f, false);
+	}
+}
+
+

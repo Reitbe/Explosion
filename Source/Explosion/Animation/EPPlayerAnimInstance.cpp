@@ -41,7 +41,8 @@ void UEPPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bIsIdle = GroundSpeed < MovementThreshold;
 		
 		// Aim
-		ControllerYaw = Character->GetControlRotation().Yaw;
-		ControllerPitch = Character->GetControlRotation().Pitch;
+		FRotator Delta = Character->GetControlRotation() - Character->GetActorRotation();
+		Delta.Normalize();
+		ControllerPitch = Delta.Pitch;
 	}
 }

@@ -10,6 +10,15 @@
 /**
  * 
  */
+
+UENUM()
+enum class EAimState : uint8
+{
+	AS_Idle,
+	AS_Aiming,
+	AS_Throwing
+};
+
 UCLASS()
 class EXPLOSION_API AEPCharacterPlayer : public AEPCharacterBase
 {
@@ -46,8 +55,17 @@ protected:
 	UPROPERTY(EditAnyWhere, Category = "Enhanced Input")
 	TObjectPtr<class UInputAction> Looking;
 
+	UPROPERTY(EditAnyWhere, Category = "Enhanced Input")
+	TObjectPtr<class UInputAction> AimingBomb;
+
+	UPROPERTY(EditAnyWhere, Category = "Enhanced Input")
+	TObjectPtr<class UInputAction> ThrowingBomb;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void AimingOn();
+	void AimingOff();
+	void Throwing();
 
 
 // Camera Section
@@ -58,5 +76,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<class UCameraComponent> Camera;
 
-	
+
+// Bomb Section
+protected:
+	FTimerHandle ChargingRateTimerHandle;
+
+	UPROPERTY(EditAnyWhere, Category = "Bomb")
+	float DamageMultiplier;
+
+// PlayerState Section
+	EAimState AimState : 1;
 };

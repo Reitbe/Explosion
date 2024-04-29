@@ -21,7 +21,6 @@ protected:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
-
 protected: 
 // Character
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))	
@@ -58,9 +57,12 @@ protected:
 
 // Aiming
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	float ControllerYaw;
+	float ControllerPitch;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	float ControllerPitch;
+	uint8 bIsBombAiming : 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
+	uint8 bIsBombThrowing : 1;
 
 };
