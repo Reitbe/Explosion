@@ -3,6 +3,7 @@
 
 #include "Explosion/Character/EPCharacterPlayer.h"
 #include "Explosion/Animation/EPPlayerAnimInstance.h"
+#include "Explosion/Bomb/EPBombBase.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
@@ -12,6 +13,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "TimerManager.h"
+
 
 AEPCharacterPlayer::AEPCharacterPlayer()
 {
@@ -27,6 +29,7 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
 	Camera->bUsePawnControlRotation = false;
+
 
 	// 에셋 로드
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> InputMappingContextFinder
@@ -80,6 +83,20 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 		ThrowingBomb = InputActionThrowingBombFinder.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ThrowingMontageFinder
+	(TEXT("/Game/Animation/Montage/AM_Throwing.AM_Throwing"));
+	if (ThrowingMontageFinder.Succeeded())
+	{
+		ThrowingMontage = ThrowingMontageFinder.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> AimingMontageFinder
+	(TEXT("/Game/Animation/Montage/AM_Aiming.AM_Aiming"));
+	if (AimingMontageFinder.Succeeded())
+	{
+		AimingMontage = AimingMontageFinder.Object;
+	}
+
 	// 폭탄 세팅
 	DamageMultiplier = 1.0f;
 }
@@ -96,14 +113,15 @@ void AEPCharacterPlayer::BeginPlay()
 		}
 	}
 
-	AimState = EAimState::AS_Idle;
+	// 폭탄 대리자 관련
+	OnThrowingBombDelegate.AddUObject(this, &AEPCharacterPlayer::OnThrowingBomb);
+
+	OnReloadingBomb();
 }
 
 void AEPCharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//FString str = FString::Printf(TEXT("%f"), Cast<UEPPlayerAnimInstance>(GetMesh()->GetAnimInstance())->ControllerPitch);
-	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
 }
 
 void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -153,31 +171,66 @@ void AEPCharacterPlayer::Look(const FInputActionValue& Value)
 
 void AEPCharacterPlayer::AimingOn()
 {
-	AimState = EAimState::AS_Aiming;
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("눌렀다!"));
+	if (bIsThrowing)
+	{
+		return;
+	}
+
+	bIsAiming = true;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(AimingMontage);
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("조준"));
 	GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
 		{
 			DamageMultiplier = 2.0f;
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("초기 2초 타이머"));
+			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("초기 2초 타이머"));
 		}
 	), 2.0f, false);
 }
 
 void AEPCharacterPlayer::AimingOff()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("해방!!"));
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("조준 해제"));
 	GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Stop(0.3f, AimingMontage);
+	}
 	DamageMultiplier = 1.0f;
-	AimState = EAimState::AS_Idle;
+	bIsAiming = false;
 }
 
 void AEPCharacterPlayer::Throwing()
 {
+	if (bIsThrowing) 
+	{
+		return;
+	}
+	bIsThrowing = true;
+
+	// 던지는 몽타주 재생
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(ThrowingMontage);
+		
+		// 몽타주 종료시 던지기 재활성화
+		FOnMontageEnded EndDelegate;
+		EndDelegate.BindUObject(this, &AEPCharacterPlayer::Throwing_OnMontageEnded);
+		AnimInstance->Montage_SetEndDelegate(EndDelegate, ThrowingMontage);
+	}
+
 	// 미조준 상태 - 타이머 작동X
-	if (AimState == EAimState::AS_Idle) 
+	if (bIsAiming == false) 
 	{	
 		DamageMultiplier = 1.0f;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준 없이 던져"));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준 없이 던지기"));
 	}
 	// 조준 상태 - 타이머 작동O
 	else
@@ -185,14 +238,27 @@ void AEPCharacterPlayer::Throwing()
 		// 풀충전
 		if ((DamageMultiplier == 2.0f))
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("풀충전"));
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준O - 최대 충전으로 던지기"));
 		}
 		// 애매 충전
 		else 
 		{
 			DamageMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
-			FString str = FString::Printf(TEXT("애매충전 - %f"), DamageMultiplier);
+			FString str = FString::Printf(TEXT("조준O - 비례 충전으로 던지기 - 가중치 : %f"), DamageMultiplier);
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
+		}
+	}
+}
+
+void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMontage, bool IsProperlyEnded)
+{
+	bIsThrowing = false;
+	if (bIsAiming)
+	{
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance)
+		{
+			AnimInstance->Montage_Play(AimingMontage);
 		}
 
 		DamageMultiplier = 1.0f;
@@ -204,5 +270,30 @@ void AEPCharacterPlayer::Throwing()
 		), 2.0f, false);
 	}
 }
+
+void AEPCharacterPlayer::OnReloadingBomb()
+{
+	BombInstance = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FVector::ZeroVector, FRotator::ZeroRotator);
+	if (BombInstance)
+	{
+		FName BombSocket(TEXT("BombHolder"));
+		//BombInstance->SetOnwerCharacter(this);
+		BombInstance->AttachToComponent(
+			GetMesh(),
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			BombSocket
+		);
+	}
+}
+
+void AEPCharacterPlayer::OnThrowingBomb()
+{
+	if (BombInstance)
+	{
+
+	}
+}
+
+
 
 

@@ -33,7 +33,6 @@ AEPCharacterBase::AEPCharacterBase()
 	static ConstructorHelpers::FClassFinder<UEPNameTagWidget> NameTagWidgetFinder(TEXT("/Game/UI/WBP_NameTagWidget.WBP_NameTagWidget_C"));
 	if (NameTagWidgetFinder.Class)
 	{
-		UE_LOG(LogTemp, Log, TEXT("EPCharacterBase, 클래스 있음."));
 		WidgetComponent->SetWidgetClass(NameTagWidgetFinder.Class);
 		WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 		WidgetComponent->SetDrawSize(FVector2D(200.0f, 50.0f));
@@ -45,6 +44,8 @@ AEPCharacterBase::AEPCharacterBase()
 void AEPCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//OnThrowingBombDelegate.AddUObject(this, &AEPCharacterBase::OnThrowingBomb);
 
 }
 
@@ -58,6 +59,14 @@ void AEPCharacterBase::Tick(float DeltaTime)
 void AEPCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void AEPCharacterBase::OnThrowingBomb()
+{
+}
+
+void AEPCharacterBase::OnReloadingBomb()
+{
 }
 
 

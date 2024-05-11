@@ -7,18 +7,6 @@
 #include "InputActionValue.h"
 #include "EPCharacterPlayer.generated.h"
 
-/**
- * 
- */
-
-UENUM()
-enum class EAimState : uint8
-{
-	AS_Idle,
-	AS_Aiming,
-	AS_Throwing
-};
-
 UCLASS()
 class EXPLOSION_API AEPCharacterPlayer : public AEPCharacterBase
 {
@@ -34,7 +22,6 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 
 // PlayerController Section
 protected:
@@ -67,6 +54,16 @@ protected:
 	void AimingOff();
 	void Throwing();
 
+// Montage Section
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<class UAnimMontage> ThrowingMontage;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<class UAnimMontage> AimingMontage;
+
+	UFUNCTION()
+	void Throwing_OnMontageEnded(class UAnimMontage* TargetMontage, bool IsProperlyEnded);
 
 // Camera Section
 protected:
@@ -79,11 +76,26 @@ protected:
 
 // Bomb Section
 protected:
+	UFUNCTION()
+	virtual void OnReloadingBomb() override;
+
+protected:
 	FTimerHandle ChargingRateTimerHandle;
+
+	UPROPERTY(VisibleAnyWhere, Category = "Bomb")
+	TObjectPtr<class AEPBombBase> BombInstance;
 
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	float DamageMultiplier;
 
-// PlayerState Section
-	EAimState AimState : 1;
+	UPROPERTY(EditAnyWhere, Category = "Bomb")
+	uint8 bIsAiming : 1;
+
+	UPROPERTY(EditAnyWhere, Category = "Bomb")
+	uint8 bIsThrowing : 1;
+
+// Notify Section
+public:
+	UFUNCTION()
+	virtual void OnThrowingBomb() override;
 };

@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "EPCharacterBase.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnThrowingBombDelegate);
 
 UCLASS()
 class EXPLOSION_API AEPCharacterBase : public ACharacter
@@ -22,6 +23,18 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+
+// Delegate Section
+public:
+	FOnThrowingBombDelegate OnThrowingBombDelegate;
+
+// Bomb Section.
+protected:
+	UPROPERTY(EditAnywhere, Category = "Bomb", Meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class AEPBombBase> BP_Bomb;
+
+	virtual void OnThrowingBomb();
+	virtual void OnReloadingBomb();
 
 // UI
 protected:
