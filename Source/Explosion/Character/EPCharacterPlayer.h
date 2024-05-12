@@ -79,6 +79,9 @@ protected:
 	UFUNCTION()
 	virtual void OnReloadingBomb() override;
 
+	UFUNCTION()
+	virtual void OnThrowingBomb() override;
+
 protected:
 	FTimerHandle ChargingRateTimerHandle;
 
@@ -94,8 +97,4 @@ protected:
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	uint8 bIsThrowing : 1;
 
-// Notify Section
-public:
-	UFUNCTION()
-	virtual void OnThrowingBomb() override;
 };

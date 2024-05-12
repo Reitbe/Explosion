@@ -7,6 +7,7 @@
 #include "EPCharacterBase.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnThrowingBombDelegate);
+DECLARE_DELEGATE(FOnReloadingBombDelegate);
 
 UCLASS()
 class EXPLOSION_API AEPCharacterBase : public ACharacter
@@ -27,11 +28,15 @@ public:
 // Delegate Section
 public:
 	FOnThrowingBombDelegate OnThrowingBombDelegate;
+	FOnReloadingBombDelegate OnReloadingBombDelegate;
 
 // Bomb Section.
 protected:
 	UPROPERTY(EditAnywhere, Category = "Bomb", Meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AEPBombBase> BP_Bomb;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bomb", Meta = (AllowPrivateAccess = "true"))
+	float ThrowingDistance;
 
 	virtual void OnThrowingBomb();
 	virtual void OnReloadingBomb();

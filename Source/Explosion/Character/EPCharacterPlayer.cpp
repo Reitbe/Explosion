@@ -99,6 +99,7 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 
 	// 폭탄 세팅
 	DamageMultiplier = 1.0f;
+	ThrowingDistance = 10000.0f;
 }
 
 void AEPCharacterPlayer::BeginPlay()
@@ -115,8 +116,8 @@ void AEPCharacterPlayer::BeginPlay()
 
 	// 폭탄 대리자 관련
 	OnThrowingBombDelegate.AddUObject(this, &AEPCharacterPlayer::OnThrowingBomb);
-
 	OnReloadingBomb();
+	OnReloadingBombDelegate.BindUObject(this, &AEPCharacterPlayer::OnReloadingBomb);
 }
 
 void AEPCharacterPlayer::Tick(float DeltaTime)
@@ -230,7 +231,7 @@ void AEPCharacterPlayer::Throwing()
 	if (bIsAiming == false) 
 	{	
 		DamageMultiplier = 1.0f;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준 없이 던지기"));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준 없이 던지기"));
 	}
 	// 조준 상태 - 타이머 작동O
 	else
@@ -238,14 +239,14 @@ void AEPCharacterPlayer::Throwing()
 		// 풀충전
 		if ((DamageMultiplier == 2.0f))
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준O - 최대 충전으로 던지기"));
+			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준O - 최대 충전으로 던지기"));
 		}
 		// 애매 충전
 		else 
 		{
 			DamageMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
-			FString str = FString::Printf(TEXT("조준O - 비례 충전으로 던지기 - 가중치 : %f"), DamageMultiplier);
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
+			//FString str = FString::Printf(TEXT("조준O - 비례 충전으로 던지기 - 가중치 : %f"), DamageMultiplier);
+			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
 		}
 	}
 }
@@ -276,6 +277,7 @@ void AEPCharacterPlayer::OnReloadingBomb()
 	BombInstance = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FVector::ZeroVector, FRotator::ZeroRotator);
 	if (BombInstance)
 	{
+		OnThrowingBombDelegate.AddUObject(BombInstance, &AEPBombBase::OnThrowingBomb);
 		FName BombSocket(TEXT("BombHolder"));
 		//BombInstance->SetOnwerCharacter(this);
 		BombInstance->AttachToComponent(
@@ -284,13 +286,27 @@ void AEPCharacterPlayer::OnReloadingBomb()
 			BombSocket
 		);
 	}
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("리로드에용"));
 }
 
 void AEPCharacterPlayer::OnThrowingBomb()
 {
 	if (BombInstance)
 	{
+		// 바라보는 방향
+		FRotator Rotation = GetControlRotation() - GetActorRotation();
+		Rotation.Normalize();
+		FVector Direction = Rotation.Vector();
 
+		// 기본 힘 * 가중치
+		BombInstance->GetBombMeshComponent()->AddImpulse(Direction * DamageMultiplier * ThrowingDistance);
+
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("캐릭터에서 폭탄 던짐"));
+		
+		OnThrowingBombDelegate.RemoveAll(BombInstance);
+		
+		BombInstance->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		BombInstance = nullptr;
 	}
 }
 

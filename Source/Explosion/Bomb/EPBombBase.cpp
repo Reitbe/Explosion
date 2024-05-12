@@ -4,6 +4,7 @@
 #include "EPBombBase.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 
 // Sets default values
 AEPBombBase::AEPBombBase()
@@ -11,12 +12,12 @@ AEPBombBase::AEPBombBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	// 메시 설정
-	BombMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
-	RootComponent = BombMesh;
+	BombMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
+	RootComponent = BombMeshComponent;
 
 	// 충돌 설정
-	BombMesh->SetCollisionProfileName(TEXT("NoCollision"));
-	BombMesh->SetSimulatePhysics(false);
+	BombMeshComponent->SetCollisionProfileName(TEXT("NoCollision"));
+	BombMeshComponent->SetSimulatePhysics(false);
 }
 
 // Called when the game starts or when spawned
@@ -33,6 +34,13 @@ void AEPBombBase::Tick(float DeltaTime)
 
 void AEPBombBase::OnThrowingBomb()
 {
+	if (BombMeshComponent) 
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("폭탄에서 해제함"));
+		BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		BombMeshComponent->SetSimulatePhysics(true);
+	}
+
 }
 
 
