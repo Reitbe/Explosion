@@ -17,21 +17,19 @@
 
 AEPCharacterPlayer::AEPCharacterPlayer()
 {
-
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// 카메라 설정
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArm->SetupAttachment(GetCapsuleComponent());
-	SpringArm->bUsePawnControlRotation = true;
+	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
+	SpringArmComponent->SetupAttachment(GetCapsuleComponent());
+	SpringArmComponent->bUsePawnControlRotation = true;
 
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm);
-	Camera->bUsePawnControlRotation = false;
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	CameraComponent->SetupAttachment(SpringArmComponent);
+	CameraComponent->bUsePawnControlRotation = false;
 
 
-	// 에셋 로드
+	// 에셋 로드 - 입력
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> InputMappingContextFinder
 	(TEXT("/Game/Input/IMC_Character.IMC_Character"));
 	if (InputMappingContextFinder.Succeeded())
@@ -60,15 +58,6 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 		Jumping = InputActionJumpFinder.Object;
 	}
 
-	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimationBlueprintFinder
-	(TEXT("/Game/Animation/AnimationBlueprint/ABP_Player.ABP_Player_C"));
-	if (AnimationBlueprintFinder.Class)
-	{
-		// 애니메이션 세팅
-		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
-		GetMesh()->SetAnimInstanceClass(AnimationBlueprintFinder.Class);
-	}
-
 	static ConstructorHelpers::FObjectFinder<UInputAction> InputActionAimingBombFinder
 	(TEXT("/Game/Input/IA_AimingBomb.IA_AimingBomb"));
 	if (InputActionAimingBombFinder.Succeeded())
@@ -81,6 +70,15 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	if (InputActionThrowingBombFinder.Succeeded())
 	{
 		ThrowingBomb = InputActionThrowingBombFinder.Object;
+	}
+
+	// 에셋 로드 - 애니메이션
+	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimationBlueprintFinder
+	(TEXT("/Game/Animation/AnimationBlueprint/ABP_Player.ABP_Player_C"));
+	if (AnimationBlueprintFinder.Class)
+	{
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(AnimationBlueprintFinder.Class);
 	}
 
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> ThrowingMontageFinder
@@ -97,7 +95,7 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 		AimingMontage = AimingMontageFinder.Object;
 	}
 
-	// 폭탄 세팅
+	// 폭탄 설정
 	DamageMultiplier = 1.0f;
 	ThrowingDistance = 10000.0f;
 }
@@ -114,7 +112,9 @@ void AEPCharacterPlayer::BeginPlay()
 		}
 	}
 
-	// 폭탄 대리자 관련
+	AnimInstance = GetMesh()->GetAnimInstance();
+
+	// 폭탄을 던지고 재장전 할 때의 대리자 연결(순서주의)
 	OnThrowingBombDelegate.AddUObject(this, &AEPCharacterPlayer::OnThrowingBomb);
 	OnReloadingBomb();
 	OnReloadingBombDelegate.BindUObject(this, &AEPCharacterPlayer::OnReloadingBomb);
@@ -139,7 +139,6 @@ void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		Input->BindAction(ThrowingBomb, ETriggerEvent::Started, this, &AEPCharacterPlayer::Throwing);
 	}
 }
-
 
 void AEPCharacterPlayer::Move(const FInputActionValue& Value)
 {
@@ -176,33 +175,30 @@ void AEPCharacterPlayer::AimingOn()
 	{
 		return;
 	}
-
 	bIsAiming = true;
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
 	if (AnimInstance)
 	{
 		AnimInstance->Montage_Play(AimingMontage);
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("조준"));
+	// 조준 시 차징 발동
 	GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
 		{
 			DamageMultiplier = 2.0f;
-			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("초기 2초 타이머"));
 		}
 	), 2.0f, false);
 }
 
 void AEPCharacterPlayer::AimingOff()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("조준 해제"));
 	GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
-	
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
 	if (AnimInstance)
 	{
 		AnimInstance->Montage_Stop(0.3f, AimingMontage);
 	}
+
 	DamageMultiplier = 1.0f;
 	bIsAiming = false;
 }
@@ -215,23 +211,20 @@ void AEPCharacterPlayer::Throwing()
 	}
 	bIsThrowing = true;
 
-	// 던지는 몽타주 재생
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance)
 	{
 		AnimInstance->Montage_Play(ThrowingMontage);
-		
-		// 몽타주 종료시 던지기 재활성화
-		FOnMontageEnded EndDelegate;
-		EndDelegate.BindUObject(this, &AEPCharacterPlayer::Throwing_OnMontageEnded);
-		AnimInstance->Montage_SetEndDelegate(EndDelegate, ThrowingMontage);
+
+		// 폭탄 던지기가 끝났을 때의 대리자 연결
+		FOnMontageBlendingOutStarted BlendingOutDelegate;
+		BlendingOutDelegate.BindUObject(this, &AEPCharacterPlayer::Throwing_OnMontageEnded);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, ThrowingMontage);
 	}
 
 	// 미조준 상태 - 타이머 작동X
 	if (bIsAiming == false) 
 	{	
 		DamageMultiplier = 1.0f;
-		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준 없이 던지기"));
 	}
 	// 조준 상태 - 타이머 작동O
 	else
@@ -241,7 +234,7 @@ void AEPCharacterPlayer::Throwing()
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준O - 최대 충전으로 던지기"));
 		}
-		// 애매 충전
+		// 비례 충전
 		else 
 		{
 			DamageMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
@@ -256,13 +249,13 @@ void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMonta
 	bIsThrowing = false;
 	if (bIsAiming)
 	{
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance)
 		{
 			AnimInstance->Montage_Play(AimingMontage);
 		}
 
 		DamageMultiplier = 1.0f;
+		// 조준 중이었다면 차징 재발동
 		GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
 		GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
 			{
@@ -279,14 +272,12 @@ void AEPCharacterPlayer::OnReloadingBomb()
 	{
 		OnThrowingBombDelegate.AddUObject(BombInstance, &AEPBombBase::OnThrowingBomb);
 		FName BombSocket(TEXT("BombHolder"));
-		//BombInstance->SetOnwerCharacter(this);
 		BombInstance->AttachToComponent(
 			GetMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			BombSocket
 		);
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("리로드에용"));
 }
 
 void AEPCharacterPlayer::OnThrowingBomb()
@@ -294,14 +285,11 @@ void AEPCharacterPlayer::OnThrowingBomb()
 	if (BombInstance)
 	{
 		// 바라보는 방향
-		FRotator Rotation = GetControlRotation() - GetActorRotation();
-		Rotation.Normalize();
+		FRotator Rotation = GetControlRotation();
 		FVector Direction = Rotation.Vector();
 
-		// 기본 힘 * 가중치
+		// 던지기(임시)
 		BombInstance->GetBombMeshComponent()->AddImpulse(Direction * DamageMultiplier * ThrowingDistance);
-
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("캐릭터에서 폭탄 던짐"));
 		
 		OnThrowingBombDelegate.RemoveAll(BombInstance);
 		

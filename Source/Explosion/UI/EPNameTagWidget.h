@@ -7,9 +7,6 @@
 #include "Components/TextBlock.h"
 #include "EPNameTagWidget.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class EXPLOSION_API UEPNameTagWidget : public UUserWidget
 {

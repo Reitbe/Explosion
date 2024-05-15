@@ -6,10 +6,9 @@
 #include "Explosion/UI/EPNameTagWidget.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-// Sets default values
 AEPCharacterBase::AEPCharacterBase()
 {
-	// 컨트롤러 회전
+	// 캐릭터와 컨트롤러의 회전을 분리
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -44,16 +43,12 @@ AEPCharacterBase::AEPCharacterBase()
 void AEPCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//OnThrowingBombDelegate.AddUObject(this, &AEPCharacterBase::OnThrowingBomb);
-
 }
 
 // Called every frame
 void AEPCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void AEPCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

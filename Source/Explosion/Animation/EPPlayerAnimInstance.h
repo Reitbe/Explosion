@@ -27,7 +27,7 @@ protected:
 	TObjectPtr<class AEPCharacterPlayer> Character;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	TObjectPtr<class UCharacterMovementComponent> CharacterMovement;
+	TObjectPtr<class UCharacterMovementComponent> CharacterMovementComponent;
 
 // Jumping
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
@@ -44,10 +44,10 @@ protected:
 	uint8 bIsMoving : 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	uint8 bIsIdle : 1;
+	FVector Velocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
-	FVector Velocity;
+	double Angle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivate = "true"))
 	float GroundSpeed;

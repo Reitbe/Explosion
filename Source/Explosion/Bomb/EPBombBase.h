@@ -20,9 +20,16 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+// Set & Get Section
 public:
 	void SetOnwerCharacter(TSubclassOf<class AEPCharacterBase> NewOwnerCharacter) { OwnerCharacter = NewOwnerCharacter; }
 	TObjectPtr<class UStaticMeshComponent> GetBombMeshComponent() { return BombMeshComponent; }
+
+// Notify Section
+public:
+	UFUNCTION()
+	void OnThrowingBomb();
+
 // Component Section
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
@@ -31,11 +38,5 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UStaticMeshComponent> BombMeshComponent;
 
-// Notify Section
-public:
-	UFUNCTION()
-	void OnThrowingBomb();
-
-// Bomb Stat Section
 
 };

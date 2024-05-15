@@ -6,9 +6,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "EPBattleRoyalGameMode.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class EXPLOSION_API AEPBattleRoyalGameMode : public AGameModeBase
 {

@@ -54,24 +54,27 @@ protected:
 	void AimingOff();
 	void Throwing();
 
-// Montage Section
-
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Montage")
-	TObjectPtr<class UAnimMontage> ThrowingMontage;
-
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Montage")
-	TObjectPtr<class UAnimMontage> AimingMontage;
-
+// Animation Section
 	UFUNCTION()
 	void Throwing_OnMontageEnded(class UAnimMontage* TargetMontage, bool IsProperlyEnded);
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Animation")
+	TObjectPtr<class UAnimInstance> AnimInstance;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Animation")
+	TObjectPtr<class UAnimMontage> AimingMontage;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Animation")
+	TObjectPtr<class UAnimMontage> ThrowingMontage;
+
 
 // Camera Section
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
-	TObjectPtr<class USpringArmComponent> SpringArm;
+	TObjectPtr<class USpringArmComponent> SpringArmComponent;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
-	TObjectPtr<class UCameraComponent> Camera;
+	TObjectPtr<class UCameraComponent> CameraComponent;
 
 
 // Bomb Section

@@ -7,7 +7,7 @@
 
 UEPPlayerAnimInstance::UEPPlayerAnimInstance()
 {
-	MovementThreshold = 3.0f;
+	MovementThreshold = 20.0f;
 	JumpingThreshold = 100.0f;
 }
 
@@ -18,7 +18,7 @@ void UEPPlayerAnimInstance::NativeInitializeAnimation()
 	Character = Cast<AEPCharacterPlayer>(GetOwningActor());
 	if (Character)
 	{
-		CharacterMovement = Character->GetCharacterMovement();
+		CharacterMovementComponent = Character->GetCharacterMovement();
 	}
 }
 
@@ -26,20 +26,21 @@ void UEPPlayerAnimInstance::NativeInitializeAnimation()
 void UEPPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
-	if (CharacterMovement) 
+	if (CharacterMovementComponent) 
 	{
-		// Movement
-		Velocity = CharacterMovement->Velocity;
+		// 캐릭터 평면 움직임
+		Velocity = CharacterMovementComponent->Velocity;
 		GroundSpeed = Velocity.Size2D();
+		FTransform CharacterTransform = Character->GetActorTransform();
+		FVector CharacterLocalXDirection = CharacterTransform.InverseTransformVectorNoScale(Velocity);
+		Angle = CharacterLocalXDirection.ToOrientationRotator().Yaw;
+
 		bIsMoving = GroundSpeed > MovementThreshold;
 
 		// Jump
-		bIsFalling = CharacterMovement->IsFalling();
+		bIsFalling = CharacterMovementComponent->IsFalling();
 		bIsJumping = bIsFalling & (Velocity.Z > JumpingThreshold);
 
-		// Idle
-		bIsIdle = GroundSpeed < MovementThreshold;
-		
 		// Aim
 		FRotator Delta = Character->GetControlRotation() - Character->GetActorRotation();
 		Delta.Normalize();

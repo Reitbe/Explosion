@@ -20,13 +20,11 @@ AEPBombBase::AEPBombBase()
 	BombMeshComponent->SetSimulatePhysics(false);
 }
 
-// Called when the game starts or when spawned
 void AEPBombBase::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-// Called every frame
 void AEPBombBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -36,7 +34,6 @@ void AEPBombBase::OnThrowingBomb()
 {
 	if (BombMeshComponent) 
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("폭탄에서 해제함"));
 		BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		BombMeshComponent->SetSimulatePhysics(true);
 	}
