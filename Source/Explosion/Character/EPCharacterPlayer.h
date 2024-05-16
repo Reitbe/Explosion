@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Explosion/Character/EPCharacterBase.h"
 #include "InputActionValue.h"
+#include "Components/TimelineComponent.h"
 #include "EPCharacterPlayer.generated.h"
 
 UCLASS()
@@ -70,11 +71,25 @@ protected:
 
 // Camera Section
 protected:
+	UFUNCTION()
+	void CameraZoom(float Alpha);
+
+protected:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<class USpringArmComponent> SpringArmComponent;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<class UCameraComponent> CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Camera")
+	TObjectPtr<class UTimelineComponent> CameraTimelineComponent;
+
+	UPROPERTY(EditAnyWhere, Category = "Camera")
+	TObjectPtr<class UCurveFloat> CameraZoomCurve;
+
+	FOnTimelineFloat CameraZoomHandler;
+	float DefaultSpringArmLength;
+	float ZoomedSpringArmLength;
 
 
 // Bomb Section
@@ -99,5 +114,4 @@ protected:
 
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	uint8 bIsThrowing : 1;
-
 };

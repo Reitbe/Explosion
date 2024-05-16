@@ -28,6 +28,15 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	CameraComponent->bUsePawnControlRotation = false;
 
+	CameraTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("CameraTimelineComponent"));
+
+	// 에셋 로드 - 카메라
+	static ConstructorHelpers::FObjectFinder<UCurveFloat> CameraZoomCurveFinder
+	(TEXT("/Game/Character/Curves/CT_CameraZoom.CT_CameraZoom"));
+	if (CameraZoomCurveFinder.Succeeded())
+	{
+		CameraZoomCurve = CameraZoomCurveFinder.Object;
+	}
 
 	// 에셋 로드 - 입력
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> InputMappingContextFinder
@@ -95,6 +104,10 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 		AimingMontage = AimingMontageFinder.Object;
 	}
 
+	// 카메라 설정
+	DefaultSpringArmLength = 300.0f;
+	ZoomedSpringArmLength = 100.0f;
+
 	// 폭탄 설정
 	DamageMultiplier = 1.0f;
 	ThrowingDistance = 10000.0f;
@@ -103,6 +116,8 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 void AEPCharacterPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 입력 컨텍스트 지정
 	PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController != nullptr)
 	{
@@ -111,6 +126,10 @@ void AEPCharacterPlayer::BeginPlay()
 			Subsystem->AddMappingContext(InputMappingContext, 0);
 		}
 	}
+
+	// 카메라 줌 설정
+	CameraZoomHandler.BindUFunction(this, FName("CameraZoom"));
+	CameraTimelineComponent->AddInterpFloat(CameraZoomCurve, CameraZoomHandler);
 
 	AnimInstance = GetMesh()->GetAnimInstance();
 
@@ -176,6 +195,7 @@ void AEPCharacterPlayer::AimingOn()
 		return;
 	}
 	bIsAiming = true;
+	CameraTimelineComponent->Play();
 
 	if (AnimInstance)
 	{
@@ -192,6 +212,9 @@ void AEPCharacterPlayer::AimingOn()
 
 void AEPCharacterPlayer::AimingOff()
 {
+	bIsAiming = false;
+	CameraTimelineComponent->Reverse();
+
 	GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
 
 	if (AnimInstance)
@@ -200,7 +223,12 @@ void AEPCharacterPlayer::AimingOff()
 	}
 
 	DamageMultiplier = 1.0f;
-	bIsAiming = false;
+}
+
+
+void AEPCharacterPlayer::CameraZoom(float Alpha)
+{
+	SpringArmComponent->TargetArmLength = FMath::Lerp(DefaultSpringArmLength, ZoomedSpringArmLength, Alpha);
 }
 
 void AEPCharacterPlayer::Throwing()
