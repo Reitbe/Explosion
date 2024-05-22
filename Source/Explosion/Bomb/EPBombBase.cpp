@@ -4,7 +4,6 @@
 #include "EPBombBase.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 
 // Sets default values
 AEPBombBase::AEPBombBase()
@@ -18,6 +17,9 @@ AEPBombBase::AEPBombBase()
 	// 충돌 설정
 	BombMeshComponent->SetCollisionProfileName(TEXT("NoCollision"));
 	BombMeshComponent->SetSimulatePhysics(false);
+
+	// 무게 설정(임시)
+	BombMass = 20.0f;
 }
 
 void AEPBombBase::BeginPlay()
@@ -36,6 +38,12 @@ void AEPBombBase::OnThrowingBomb()
 	{
 		BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		BombMeshComponent->SetSimulatePhysics(true);
+
+		FBodyInstance* BodyInstance = BombMeshComponent->GetBodyInstance();
+		if (BodyInstance)
+		{
+			BodyInstance->SetMassOverride(BombMass, true);
+		}
 	}
 
 }

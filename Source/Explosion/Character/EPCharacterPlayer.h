@@ -100,14 +100,23 @@ protected:
 	UFUNCTION()
 	virtual void OnThrowingBomb() override;
 
+	//UFUNCTION()
+	//void DrawThrowingPath();
+
 protected:
 	FTimerHandle ChargingRateTimerHandle;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Bomb")
 	TObjectPtr<class AEPBombBase> BombInstance;
 
+	UPROPERTY(VisibleAnyWhere, Category = "Bomb")
+	float BombMass;
+
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
-	float DamageMultiplier;
+	FVector ThrowingPower;
+
+	UPROPERTY(EditAnyWhere, Category = "Bomb")
+	float ThrowingDistanceMultiplier;
 
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	uint8 bIsAiming : 1;

@@ -2,16 +2,17 @@
 
 
 #include "Explosion/Character/EPCharacterPlayer.h"
+#include "Components/CapsuleComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Explosion/Animation/EPPlayerAnimInstance.h"
 #include "Explosion/Bomb/EPBombBase.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "InputMappingContext.h"
-#include "InputAction.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
+#include "InputMappingContext.h"
+#include "InputAction.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 
@@ -109,7 +110,7 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	ZoomedSpringArmLength = 100.0f;
 
 	// 폭탄 설정
-	DamageMultiplier = 1.0f;
+	ThrowingDistanceMultiplier = 1.0f;
 	ThrowingDistance = 10000.0f;
 }
 
@@ -142,6 +143,11 @@ void AEPCharacterPlayer::BeginPlay()
 void AEPCharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	//if (bIsAiming && !bIsThrowing)
+	//{
+	//	DrawThrowingPath();
+	//}
 }
 
 void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -205,7 +211,7 @@ void AEPCharacterPlayer::AimingOn()
 	// 조준 시 차징 발동
 	GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
 		{
-			DamageMultiplier = 2.0f;
+			ThrowingDistanceMultiplier = 2.0f;
 		}
 	), 2.0f, false);
 }
@@ -222,7 +228,7 @@ void AEPCharacterPlayer::AimingOff()
 		AnimInstance->Montage_Stop(0.3f, AimingMontage);
 	}
 
-	DamageMultiplier = 1.0f;
+	ThrowingDistanceMultiplier = 1.0f;
 }
 
 
@@ -252,20 +258,20 @@ void AEPCharacterPlayer::Throwing()
 	// 미조준 상태 - 타이머 작동X
 	if (bIsAiming == false) 
 	{	
-		DamageMultiplier = 1.0f;
+		ThrowingDistanceMultiplier = 1.0f;
 	}
 	// 조준 상태 - 타이머 작동O
 	else
 	{
 		// 풀충전
-		if ((DamageMultiplier == 2.0f))
+		if ((ThrowingDistanceMultiplier == 2.0f))
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준O - 최대 충전으로 던지기"));
 		}
 		// 비례 충전
 		else 
 		{
-			DamageMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
+			ThrowingDistanceMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
 			//FString str = FString::Printf(TEXT("조준O - 비례 충전으로 던지기 - 가중치 : %f"), DamageMultiplier);
 			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
 		}
@@ -282,12 +288,12 @@ void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMonta
 			AnimInstance->Montage_Play(AimingMontage);
 		}
 
-		DamageMultiplier = 1.0f;
+		ThrowingDistanceMultiplier = 1.0f;
 		// 조준 중이었다면 차징 재발동
 		GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
 		GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
 			{
-				DamageMultiplier = 2.0f;
+				ThrowingDistanceMultiplier = 2.0f;
 			}
 		), 2.0f, false);
 	}
@@ -300,11 +306,16 @@ void AEPCharacterPlayer::OnReloadingBomb()
 	{
 		OnThrowingBombDelegate.AddUObject(BombInstance, &AEPBombBase::OnThrowingBomb);
 		FName BombSocket(TEXT("BombHolder"));
-		BombInstance->AttachToComponent(
-			GetMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			BombSocket
-		);
+		if (GetMesh()->DoesSocketExist(BombSocket))
+		{
+			BombInstance->AttachToComponent(
+				GetMesh(),
+				FAttachmentTransformRules::SnapToTargetIncludingScale,
+				BombSocket
+			);
+		}
+
+		BombMass = BombInstance->GetBombMass();
 	}
 }
 
@@ -317,7 +328,7 @@ void AEPCharacterPlayer::OnThrowingBomb()
 		FVector Direction = Rotation.Vector();
 
 		// 던지기(임시)
-		BombInstance->GetBombMeshComponent()->AddImpulse(Direction * DamageMultiplier * ThrowingDistance);
+		BombInstance->GetBombMeshComponent()->AddImpulse(Direction * ThrowingDistanceMultiplier * ThrowingDistance);
 		
 		OnThrowingBombDelegate.RemoveAll(BombInstance);
 		
@@ -325,6 +336,24 @@ void AEPCharacterPlayer::OnThrowingBomb()
 		BombInstance = nullptr;
 	}
 }
+
+//void AEPCharacterPlayer::DrawThrowingPath()
+//{
+//	// 폭탄 던지기 경로 예측
+//	FPredictProjectilePathParams Params(
+//		0.0f,
+//		BombInstance->GetActorLocation(),
+//		ThrowingPower,
+//		5.0f,
+//		ECollisionChannel::ECC_Visibility
+//	);
+//	Params.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+//
+//	FPredictProjectilePathResult Result;
+//	UGameplayStatics::PredictProjectilePath(this, Params, Result);
+//}
+
+
 
 
 

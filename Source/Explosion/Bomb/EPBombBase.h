@@ -23,7 +23,9 @@ public:
 // Set & Get Section
 public:
 	void SetOnwerCharacter(TSubclassOf<class AEPCharacterBase> NewOwnerCharacter) { OwnerCharacter = NewOwnerCharacter; }
-	TObjectPtr<class UStaticMeshComponent> GetBombMeshComponent() { return BombMeshComponent; }
+
+	TObjectPtr<class UStaticMeshComponent> GetBombMeshComponent() const { return BombMeshComponent; }
+	float GetBombMass() const { return BombMass; }
 
 // Notify Section
 public:
@@ -37,6 +39,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UStaticMeshComponent> BombMeshComponent;
+
+// Bomb Stat(임시)
+protected:
+	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
+	float BombMass;
+
+	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
+	float BombDamage;
 
 
 };
