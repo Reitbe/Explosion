@@ -134,6 +134,24 @@ void AEPCharacterPlayer::BeginPlay()
 
 	AnimInstance = GetMesh()->GetAnimInstance();
 
+	// 들고 있을 폭탄 스폰 및 소켓에 부착
+	BombInHand = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FVector::ZeroVector, FRotator::ZeroRotator);
+	if (BombInHand)
+	{
+		BombInHand->GetBombMeshComponent()->SetSimulatePhysics(false);
+		BombInHand->GetBombMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		FName BombSocket(TEXT("BombHolder"));
+		if (GetMesh()->DoesSocketExist(BombSocket))
+		{
+			BombInHand->AttachToComponent(
+				GetMesh(),
+				FAttachmentTransformRules::SnapToTargetIncludingScale,
+				BombSocket
+			);
+		}
+	}
+
 	// 폭탄을 던지고 재장전 할 때의 대리자 연결(순서주의)
 	OnThrowingBombDelegate.AddUObject(this, &AEPCharacterPlayer::OnThrowingBomb);
 	OnReloadingBomb();
@@ -301,39 +319,54 @@ void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMonta
 
 void AEPCharacterPlayer::OnReloadingBomb()
 {
-	BombInstance = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FVector::ZeroVector, FRotator::ZeroRotator);
-	if (BombInstance)
-	{
-		OnThrowingBombDelegate.AddUObject(BombInstance, &AEPBombBase::OnThrowingBomb);
-		FName BombSocket(TEXT("BombHolder"));
-		if (GetMesh()->DoesSocketExist(BombSocket))
-		{
-			BombInstance->AttachToComponent(
-				GetMesh(),
-				FAttachmentTransformRules::SnapToTargetIncludingScale,
-				BombSocket
-			);
-		}
+	//BombInstance = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FVector::ZeroVector, FRotator::ZeroRotator);
+	//
+	//if (BombInstance)
+	//{
+	//	OnThrowingBombDelegate.AddUObject(BombInstance, &AEPBombBase::OnThrowingBomb);
+	//	FName BombSocket(TEXT("BombHolder"));
+	//	if (GetMesh()->DoesSocketExist(BombSocket))
+	//	{
+	//		BombInstance->AttachToComponent(
+	//			GetMesh(),
+	//			FAttachmentTransformRules::SnapToTargetIncludingScale,
+	//			BombSocket
+	//		);
+	//	}
+	//}
 
-		BombMass = BombInstance->GetBombMass();
+	if (BombToThrow)
+	{
+		OnThrowingBombDelegate.AddUObject(BombToThrow, &AEPBombBase::OnThrowingBomb);
+	}
+
+	if (BombInHand)
+	{
+		BombInHand->SetActorHiddenInGame(false);
 	}
 }
 
 void AEPCharacterPlayer::OnThrowingBomb()
 {
-	if (BombInstance)
-	{
-		// 바라보는 방향
-		FRotator Rotation = GetControlRotation();
-		FVector Direction = Rotation.Vector();
+	FRotator Rotation = GetControlRotation();
+	FVector Direction = Rotation.Vector();
 
-		// 던지기(임시)
-		BombInstance->GetBombMeshComponent()->AddImpulse(Direction * ThrowingDistanceMultiplier * ThrowingDistance);
-		
-		OnThrowingBombDelegate.RemoveAll(BombInstance);
-		
-		BombInstance->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		BombInstance = nullptr;
+	FRotator BombInHandRotation = BombInHand->GetActorRotation();
+	FVector BombInHandLocation = BombInHand->GetActorLocation();
+
+	// 던지기(임시)
+	BombToThrow = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, BombInHandLocation, BombInHandRotation);
+	
+	//BombToThrow->GetBombMeshComponent()->AddImpulse(Direction * ThrowingDistanceMultiplier * ThrowingDistance);
+
+	// OnThrowingBombDelegate.RemoveAll(BombInstance);
+
+	//BombInstance->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+
+	if (BombInHand)
+	{
+		BombInHand->SetActorHiddenInGame(true);
 	}
 }
 

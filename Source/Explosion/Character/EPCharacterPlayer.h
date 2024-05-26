@@ -107,10 +107,10 @@ protected:
 	FTimerHandle ChargingRateTimerHandle;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Bomb")
-	TObjectPtr<class AEPBombBase> BombInstance;
+	TObjectPtr<class AEPBombBase> BombToThrow;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Bomb")
-	float BombMass;
+	TObjectPtr<class AEPBombBase> BombInHand;
 
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	FVector ThrowingPower;

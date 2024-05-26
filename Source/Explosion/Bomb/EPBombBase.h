@@ -37,8 +37,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AEPCharacterBase> OwnerCharacter;
 
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
+	//TObjectPtr<class UCapsuleComponent> BombCollisionComponent;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UStaticMeshComponent> BombMeshComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UProjectileMovementComponent> BombMovementComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UParticleSystemComponent> BombParticleComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAudioComponent> BombAudioComponent;
+
 
 // Bomb Stat(임시)
 protected:
@@ -48,5 +61,10 @@ protected:
 	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
 	float BombDamage;
 
+	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
+	float BombArea;
+
+	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
+	float BombDelayTime;
 
 };
