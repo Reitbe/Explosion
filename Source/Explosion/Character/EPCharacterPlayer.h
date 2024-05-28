@@ -19,6 +19,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -92,17 +93,30 @@ protected:
 	float ZoomedSpringArmLength;
 
 
-// Bomb Section
+// Aiming & Throwing Section
 protected:
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCAimingOn(bool bIsAimingOn);
+
+	UFUNCTION()
+	void OnRep_Aiming();
+
 	UFUNCTION()
 	virtual void OnReloadingBomb() override;
 
 	UFUNCTION()
 	virtual void OnThrowingBomb() override;
 
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCThrowing();
+
+	UFUNCTION()
+	void OnRep_Throwing();
+
 	//UFUNCTION()
 	//void DrawThrowingPath();
 
+// Bomb Section
 protected:
 	FTimerHandle ChargingRateTimerHandle;
 
@@ -118,9 +132,9 @@ protected:
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	float ThrowingDistanceMultiplier;
 
-	UPROPERTY(EditAnyWhere, Category = "Bomb")
+	UPROPERTY(ReplicatedUsing = OnRep_Aiming, EditAnyWhere, Category = "Bomb")
 	uint8 bIsAiming : 1;
 
-	UPROPERTY(EditAnyWhere, Category = "Bomb")
+	UPROPERTY(ReplicatedUsing = OnRep_Throwing, EditAnyWhere, Category = "Bomb")
 	uint8 bIsThrowing : 1;
 };
