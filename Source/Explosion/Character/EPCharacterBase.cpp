@@ -10,11 +10,11 @@ AEPCharacterBase::AEPCharacterBase()
 {
 	// 캐릭터와 컨트롤러의 회전을 분리
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// 움직임 설정
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 400.0f, 0.0f);
 	GetCharacterMovement()->JumpZVelocity = 500.0f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.0f;

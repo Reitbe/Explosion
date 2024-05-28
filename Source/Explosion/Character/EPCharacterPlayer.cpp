@@ -2,18 +2,21 @@
 
 
 #include "Explosion/Character/EPCharacterPlayer.h"
+#include "Components/CapsuleComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Explosion/Animation/EPPlayerAnimInstance.h"
 #include "Explosion/Bomb/EPBombBase.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "InputMappingContext.h"
-#include "InputAction.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
+#include "InputMappingContext.h"
+#include "InputAction.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-
+#include "Net/UnrealNetwork.h"
+#include "Explosion/Explosion.h"
+// EP_LOG(LogExplosion, Log, TEXT("%s"), TEXT("전체 다 몽타주를 재생"));
 
 AEPCharacterPlayer::AEPCharacterPlayer()
 {
@@ -109,8 +112,11 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	ZoomedSpringArmLength = 100.0f;
 
 	// 폭탄 설정
-	DamageMultiplier = 1.0f;
+	ThrowingDistanceMultiplier = 1.0f;
 	ThrowingDistance = 10000.0f;
+
+	bIsAiming = false;
+	bIsThrowing = false;
 }
 
 void AEPCharacterPlayer::BeginPlay()
@@ -133,15 +139,45 @@ void AEPCharacterPlayer::BeginPlay()
 
 	AnimInstance = GetMesh()->GetAnimInstance();
 
-	// 폭탄을 던지고 재장전 할 때의 대리자 연결(순서주의)
+	// 들고 있을 폭탄 스폰 및 소켓에 부착
+	BombInHand = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FVector::ZeroVector, FRotator::ZeroRotator);
+	if (BombInHand)
+	{
+		BombInHand->GetBombMeshComponent()->SetSimulatePhysics(false);
+		BombInHand->GetBombMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		FName BombSocket(TEXT("BombHolder"));
+		if (GetMesh()->DoesSocketExist(BombSocket))
+		{
+			BombInHand->AttachToComponent(
+				GetMesh(),
+				FAttachmentTransformRules::SnapToTargetIncludingScale,
+				BombSocket
+			);
+		}
+	}
+
+	// 폭탄을 던지고 재장전 할 때의 대리자 연결
 	OnThrowingBombDelegate.AddUObject(this, &AEPCharacterPlayer::OnThrowingBomb);
-	OnReloadingBomb();
+	//OnReloadingBomb();
 	OnReloadingBombDelegate.BindUObject(this, &AEPCharacterPlayer::OnReloadingBomb);
+}
+
+void AEPCharacterPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AEPCharacterPlayer, bIsAiming);
+	DOREPLIFETIME(AEPCharacterPlayer, bIsThrowing);
 }
 
 void AEPCharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	//if (bIsAiming && !bIsThrowing)
+	//{
+	//	DrawThrowingPath();
+	//}
 }
 
 void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -190,41 +226,57 @@ void AEPCharacterPlayer::Look(const FInputActionValue& Value)
 
 void AEPCharacterPlayer::AimingOn()
 {
+	// 서버, 클라 공통 영역
 	if (bIsThrowing)
 	{
 		return;
 	}
-	bIsAiming = true;
 	CameraTimelineComponent->Play();
-
-	if (AnimInstance)
-	{
-		AnimInstance->Montage_Play(AimingMontage);
-	}
-
-	// 조준 시 차징 발동
-	GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
-		{
-			DamageMultiplier = 2.0f;
-		}
-	), 2.0f, false);
+	ServerRPCAimingOn(true);
 }
 
 void AEPCharacterPlayer::AimingOff()
 {
-	bIsAiming = false;
 	CameraTimelineComponent->Reverse();
-
-	GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
-
-	if (AnimInstance)
-	{
-		AnimInstance->Montage_Stop(0.3f, AimingMontage);
-	}
-
-	DamageMultiplier = 1.0f;
+	ServerRPCAimingOn(false);
 }
 
+void AEPCharacterPlayer::ServerRPCAimingOn_Implementation(bool bIsAimingOn)
+{
+	bIsAiming = bIsAimingOn;
+	
+	OnRep_Aiming();
+}
+
+void AEPCharacterPlayer::OnRep_Aiming()
+{
+	if (AnimInstance)
+	{
+		// 조준
+		if (bIsAiming)
+		{
+			AnimInstance->Montage_Play(AimingMontage);
+			if (HasAuthority())
+			{
+				GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
+					{
+						ThrowingDistanceMultiplier = 2.0f;
+					}
+				), 2.0f, false);
+			}
+		}
+		// 조준 해제
+		else
+		{
+			AnimInstance->Montage_Stop(0.3f, AimingMontage);
+			if (HasAuthority())
+			{
+				GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
+				ThrowingDistanceMultiplier = 1.0f;
+			}
+		}
+	}
+}
 
 void AEPCharacterPlayer::CameraZoom(float Alpha)
 {
@@ -237,44 +289,49 @@ void AEPCharacterPlayer::Throwing()
 	{
 		return;
 	}
+	ServerRPCThrowing();
+}
+
+
+void AEPCharacterPlayer::ServerRPCThrowing_Implementation()
+{
 	bIsThrowing = true;
+	OnRep_Throwing();
+}
 
-	if (AnimInstance)
+void AEPCharacterPlayer::OnRep_Throwing()
+{
+	if (bIsThrowing)
 	{
-		AnimInstance->Montage_Play(ThrowingMontage);
-
-		// 폭탄 던지기가 끝났을 때의 대리자 연결
-		FOnMontageBlendingOutStarted BlendingOutDelegate;
-		BlendingOutDelegate.BindUObject(this, &AEPCharacterPlayer::Throwing_OnMontageEnded);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, ThrowingMontage);
-	}
-
-	// 미조준 상태 - 타이머 작동X
-	if (bIsAiming == false) 
-	{	
-		DamageMultiplier = 1.0f;
-	}
-	// 조준 상태 - 타이머 작동O
-	else
-	{
-		// 풀충전
-		if ((DamageMultiplier == 2.0f))
+		if (AnimInstance)
 		{
-			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("조준O - 최대 충전으로 던지기"));
+			AnimInstance->Montage_Play(ThrowingMontage);
+			FOnMontageBlendingOutStarted BlendingOutDelegate;
+			BlendingOutDelegate.BindUObject(this, &AEPCharacterPlayer::Throwing_OnMontageEnded);
+			AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, ThrowingMontage);
 		}
-		// 비례 충전
-		else 
+
+		if (HasAuthority())
 		{
-			DamageMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
-			//FString str = FString::Printf(TEXT("조준O - 비례 충전으로 던지기 - 가중치 : %f"), DamageMultiplier);
-			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, str);
+			if (bIsAiming == false)
+			{
+				ThrowingDistanceMultiplier = 1.0f;
+			}
+			else if (ThrowingDistanceMultiplier != 2.0f)
+			{
+				ThrowingDistanceMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
+			}
+			else
+			{
+				ThrowingDistanceMultiplier = 2.0f;
+			}
 		}
 	}
 }
 
+
 void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMontage, bool IsProperlyEnded)
 {
-	bIsThrowing = false;
 	if (bIsAiming)
 	{
 		if (AnimInstance)
@@ -282,49 +339,76 @@ void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMonta
 			AnimInstance->Montage_Play(AimingMontage);
 		}
 
-		DamageMultiplier = 1.0f;
-		// 조준 중이었다면 차징 재발동
-		GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
-		GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
-			{
-				DamageMultiplier = 2.0f;
-			}
-		), 2.0f, false);
+		if (HasAuthority())
+		{
+			ThrowingDistanceMultiplier = 1.0f;
+
+			GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
+			GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
+				{
+					ThrowingDistanceMultiplier = 2.0f;
+				}
+			), 2.0f, false);
+		}
+	}
+
+	if (HasAuthority())
+	{
+		bIsThrowing = false;
 	}
 }
 
 void AEPCharacterPlayer::OnReloadingBomb()
 {
-	BombInstance = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FVector::ZeroVector, FRotator::ZeroRotator);
-	if (BombInstance)
+	//if (BombToThrow)
+	//{
+	//	OnThrowingBombDelegate.AddUObject(BombToThrow, &AEPBombBase::OnThrowingBomb);
+	//}
+
+	if (BombInHand)
 	{
-		OnThrowingBombDelegate.AddUObject(BombInstance, &AEPBombBase::OnThrowingBomb);
-		FName BombSocket(TEXT("BombHolder"));
-		BombInstance->AttachToComponent(
-			GetMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			BombSocket
-		);
+		BombInHand->SetActorHiddenInGame(false);
 	}
 }
 
 void AEPCharacterPlayer::OnThrowingBomb()
 {
-	if (BombInstance)
+	if (BombInHand)
 	{
-		// 바라보는 방향
-		FRotator Rotation = GetControlRotation();
-		FVector Direction = Rotation.Vector();
+		BombInHand->SetActorHiddenInGame(true);
+	}
 
-		// 던지기(임시)
-		BombInstance->GetBombMeshComponent()->AddImpulse(Direction * DamageMultiplier * ThrowingDistance);
-		
-		OnThrowingBombDelegate.RemoveAll(BombInstance);
-		
-		BombInstance->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		BombInstance = nullptr;
+	if (HasAuthority())
+	{
+		FRotator ThrowingRotation = GetControlRotation();
+		FVector ThrowingDirection = ThrowingRotation.Vector();
+
+		FRotator BombInHandRotation = BombInHand->GetActorRotation();
+		FVector BombInHandLocation = BombInHand->GetActorLocation();
+
+		BombToThrow = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, BombInHandLocation, BombInHandRotation);
+		BombToThrow->GetBombMeshComponent()->AddImpulse(ThrowingDirection * ThrowingDistanceMultiplier * ThrowingDistance);
 	}
 }
+
+
+//void AEPCharacterPlayer::DrawThrowingPath()
+//{
+//	// 폭탄 던지기 경로 예측
+//	FPredictProjectilePathParams Params(
+//		0.0f,
+//		BombInstance->GetActorLocation(),
+//		ThrowingPower,
+//		5.0f,
+//		ECollisionChannel::ECC_Visibility
+//	);
+//	Params.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+//
+//	FPredictProjectilePathResult Result;
+//	UGameplayStatics::PredictProjectilePath(this, Params, Result);
+//}
+
+
 
 
 
