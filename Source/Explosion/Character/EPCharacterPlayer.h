@@ -95,7 +95,7 @@ protected:
 
 // Aiming & Throwing Section
 protected:
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerRPCAimingOn(bool bIsAimingOn);
 
 	UFUNCTION()
@@ -107,7 +107,7 @@ protected:
 	UFUNCTION()
 	virtual void OnThrowingBomb() override;
 
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerRPCThrowing();
 
 	UFUNCTION()
@@ -130,7 +130,7 @@ protected:
 	FVector ThrowingPower;
 
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
-	float ThrowingDistanceMultiplier;
+	float ThrowingVelocityMultiplier;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Aiming, EditAnyWhere, Category = "Bomb")
 	uint8 bIsAiming : 1;

@@ -32,6 +32,7 @@ AEPCharacterBase::AEPCharacterBase()
 	static ConstructorHelpers::FClassFinder<UEPNameTagWidget> NameTagWidgetFinder(TEXT("/Game/UI/WBP_NameTagWidget.WBP_NameTagWidget_C"));
 	if (NameTagWidgetFinder.Class)
 	{
+		//NameTagWidget = NameTagWidgetFinder.Class;
 		WidgetComponent->SetWidgetClass(NameTagWidgetFinder.Class);
 		WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 		WidgetComponent->SetDrawSize(FVector2D(200.0f, 50.0f));
@@ -43,6 +44,8 @@ AEPCharacterBase::AEPCharacterBase()
 void AEPCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	NameTagWidget = Cast<UEPNameTagWidget>(WidgetComponent->GetUserWidgetObject());
+	NameTagWidget->ShowPlayerNetRole(this);
 }
 
 // Called every frame

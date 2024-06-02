@@ -6,8 +6,33 @@
 void UEPNameTagWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	if (TxtNameTag)
+	//if (TxtNameTag)
+	//{
+	//	TxtNameTag->SetText(FText::FromString("TestName"));
+	//}
+}
+
+void UEPNameTagWidget::ShowPlayerNetRole(TObjectPtr<APawn> Player)
+{
+	ENetRole NetRole = Player->GetLocalRole();
+
+	FString Role;
+
+	switch (NetRole)
 	{
-		TxtNameTag->SetText(FText::FromString("TestName"));
+		case ENetRole::ROLE_Authority:
+			Role = "Authority";
+			break;
+		case ENetRole::ROLE_AutonomousProxy:
+			Role = "AutonomousProxy";
+			break;
+		case ENetRole::ROLE_SimulatedProxy:
+			Role = "SimulatedProxy";
+			break;
+		case ENetRole::ROLE_None:
+			Role = "None";
+			break;
 	}
+
+	SetNameTag(Role);
 }

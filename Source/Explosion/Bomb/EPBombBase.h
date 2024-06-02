@@ -22,20 +22,21 @@ public:
 
 // Set & Get Section
 public:
-	void SetOnwerCharacter(TSubclassOf<class AEPCharacterBase> NewOwnerCharacter) { OwnerCharacter = NewOwnerCharacter; }
+	void SetBombOnwer(TSubclassOf<class AEPCharacterBase> _BombOwner) { BombOwner = _BombOwner; }
 
 	TObjectPtr<class UStaticMeshComponent> GetBombMeshComponent() const { return BombMeshComponent; }
 	float GetBombMass() const { return BombMass; }
 
-// Notify Section
-public:
-	UFUNCTION()
-	void OnThrowingBomb();
+// Replicate Section
+protected:
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPCExplode();
+
 
 // Component Section
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class AEPCharacterBase> OwnerCharacter;
+	TSubclassOf<class AEPCharacterBase> BombOwner;
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	//TObjectPtr<class UCapsuleComponent> BombCollisionComponent;
@@ -47,10 +48,22 @@ protected:
 	TObjectPtr<class UProjectileMovementComponent> BombMovementComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UParticleSystemComponent> BombParticleComponent;
+	TObjectPtr<class UAudioComponent> BombAudioComponent;
+
+// Bomb Function Section
+public:
+	void ActiveBomb();
+	void DeactiveBomb();
+	void ActiveBombTimeTrigger();
+
+
+// Bomb Particle Section
+protected:
+	UPROPERTY()
+	TObjectPtr<class UGameplayStatics> BombGamePlayStatics;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UAudioComponent> BombAudioComponent;
+	TObjectPtr<class UParticleSystem> BombParticleSystem;
 
 
 // Bomb Stat(임시)

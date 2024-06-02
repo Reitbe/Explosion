@@ -11,6 +11,6 @@ void UAnimNotify_ThrowingBomb::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 	AEPCharacterBase* Character = Cast<AEPCharacterBase>(MeshComp->GetOwner());
 	if (Character)
 	{
-		Character->OnThrowingBombDelegate.Broadcast();
+		Character->OnThrowingBombDelegate.Execute();
 	}
 }
