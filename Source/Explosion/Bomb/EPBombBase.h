@@ -22,20 +22,22 @@ public:
 
 // Set & Get Section
 public:
-	void SetOnwerCharacter(TSubclassOf<class AEPCharacterBase> NewOwnerCharacter) { OwnerCharacter = NewOwnerCharacter; }
+	void SetBombOnwer(TObjectPtr<AActor> _BombOwner) { BombOwner = _BombOwner; }
 
 	TObjectPtr<class UStaticMeshComponent> GetBombMeshComponent() const { return BombMeshComponent; }
+	bool GetIsBombActive() const { return bIsBombActive; }
 	float GetBombMass() const { return BombMass; }
 
-// Notify Section
-public:
-	UFUNCTION()
-	void OnThrowingBomb();
+// Replicate Section
+protected:
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPCExplode();
+
 
 // Component Section
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class AEPCharacterBase> OwnerCharacter;
+	TObjectPtr<AActor> BombOwner;
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	//TObjectPtr<class UCapsuleComponent> BombCollisionComponent;
@@ -47,11 +49,28 @@ protected:
 	TObjectPtr<class UProjectileMovementComponent> BombMovementComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UParticleSystemComponent> BombParticleComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAudioComponent> BombAudioComponent;
 
+// Bomb Function Section
+public:
+	void ActiveBomb();
+	void DeactiveBomb();
+	void SetBombInHandOption();
+	void ActiveBombTimeTrigger();
+
+
+// Bomb Particle Section
+protected:
+	UPROPERTY()
+	TObjectPtr<class UGameplayStatics> BombGamePlayStatics;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UParticleSystem> BombParticleSystem;
+
+// Bomb Manager
+public:
+	UPROPERTY()
+	TObjectPtr<class UEPBombManager> BombManager;
 
 // Bomb Stat(임시)
 protected:
@@ -67,4 +86,5 @@ protected:
 	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
 	float BombDelayTime;
 
+	uint8 bIsBombActive : 1;
 };

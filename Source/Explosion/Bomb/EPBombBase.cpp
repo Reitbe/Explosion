@@ -4,45 +4,40 @@
 #include "EPBombBase.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Particles/ParticleSystemComponent.h"
+#include "Particles/ParticleSystem.h"
 #include "Components/AudioComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
 // Sets default values
 AEPBombBase::AEPBombBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
 	SetReplicates(true);
 	SetReplicateMovement(true);
-
-	// 충돌 설정
-	//BombCollisionComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("BombCollision"));
-	//RootComponent = BombCollisionComponent;
-
+	
+	SetActorHiddenInGame(true);
+	SetActorTickEnabled(false);
 
 	// 메시 설정
 	BombMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
 	RootComponent = BombMeshComponent;
 
-	BombMeshComponent->SetSimulatePhysics(true);
-	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-
-	// 충돌 설정
-	//BombMeshComponent->SetCollisionProfileName(TEXT("NoCollision"));
-	//BombMeshComponent->SetSimulatePhysics(false);
+	// 충돌 설정-폭탄과 캐릭터 초기 충돌 방지
+	BombMeshComponent->SetIsReplicated(true);
+	BombMeshComponent->SetSimulatePhysics(false);
+	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	BombMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("BombMovementComponent"));
-
-	BombParticleComponent = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("BombParticleComponent"));
-	BombParticleComponent->SetupAttachment(RootComponent);
 
 	BombAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("BombAudioComponent"));
 	BombAudioComponent->SetupAttachment(RootComponent);
 
-
-	// 무게 설정(임시)
+	// 옵션 설정(임시)
 	BombMass = 20.0f;
-
+	BombDelayTime = 3.0f;
 }
 
 void AEPBombBase::BeginPlay()
@@ -55,14 +50,50 @@ void AEPBombBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AEPBombBase::OnThrowingBomb()
+void AEPBombBase::ActiveBomb()
 {
-	//if (BombMeshComponent) 
-	//{
-		//BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		//BombMeshComponent->SetSimulatePhysics(true);
-	//}
-
+	SetActorHiddenInGame(false);
+	SetActorTickEnabled(true);
+	BombMeshComponent->SetSimulatePhysics(true);
+	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	bIsBombActive = true;
 }
+
+void AEPBombBase::DeactiveBomb()
+{
+	SetActorHiddenInGame(true);
+	SetActorTickEnabled(false);
+	BombMeshComponent->SetSimulatePhysics(false);
+	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	bIsBombActive = false;
+}
+
+void AEPBombBase::SetBombInHandOption()
+{
+	SetActorHiddenInGame(false);
+	SetActorTickEnabled(true);
+	BombMeshComponent->SetSimulatePhysics(false);
+	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+
+void AEPBombBase::ActiveBombTimeTrigger()
+{
+	if (HasAuthority())
+	{
+		FTimerHandle DestroyTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, this, &AEPBombBase::MulticastRPCExplode, BombDelayTime, false);
+	}
+}
+
+void AEPBombBase::MulticastRPCExplode_Implementation()
+{
+	BombGamePlayStatics->SpawnEmitterAtLocation(GetWorld(), BombParticleSystem, GetActorLocation());
+	if (HasAuthority())
+	{
+		DeactiveBomb();
+	}
+}
+
 
 

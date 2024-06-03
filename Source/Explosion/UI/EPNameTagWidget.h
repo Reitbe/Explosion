@@ -17,8 +17,9 @@ public:
 
 public:
 	FORCEINLINE void SetNameTag(FString Name) { TxtNameTag->SetText(FText::FromString(Name)); }
+	void ShowPlayerNetRole(TObjectPtr<APawn> Player);
 
 public:
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UTextBlock> TxtNameTag;
 };

@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 #include "EPCharacterBase.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnThrowingBombDelegate);
+DECLARE_DELEGATE(FOnThrowingBombDelegate);
 DECLARE_DELEGATE(FOnReloadingBombDelegate);
 
 UCLASS()
@@ -30,13 +30,21 @@ public:
 	FOnThrowingBombDelegate OnThrowingBombDelegate;
 	FOnReloadingBombDelegate OnReloadingBombDelegate;
 
-// Bomb Section.
+// Bomb Manager Section.
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BombManager", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEPBombManager> BombManager;
+
+// Bomb Section
 protected:
 	UPROPERTY(EditAnywhere, Category = "Bomb", Meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AEPBombBase> BP_Bomb;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bomb", Meta = (AllowPrivateAccess = "true"))
-	float ThrowingDistance;
+	float ThrowingVelocity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bomb", Meta = (AllowPrivateAccess = "true"))
+	float BombMass;
 
 	virtual void OnThrowingBomb();
 	virtual void OnReloadingBomb();
