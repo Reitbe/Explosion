@@ -17,12 +17,16 @@ AEPBombBase::AEPBombBase()
 
 	SetReplicates(true);
 	SetReplicateMovement(true);
+	
+	SetActorHiddenInGame(true);
+	SetActorTickEnabled(false);
 
 	// 메시 설정
 	BombMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
 	RootComponent = BombMeshComponent;
 
 	// 충돌 설정-폭탄과 캐릭터 초기 충돌 방지
+	BombMeshComponent->SetIsReplicated(true);
 	BombMeshComponent->SetSimulatePhysics(false);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -52,12 +56,22 @@ void AEPBombBase::ActiveBomb()
 	SetActorTickEnabled(true);
 	BombMeshComponent->SetSimulatePhysics(true);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	bIsBombActive = true;
 }
 
 void AEPBombBase::DeactiveBomb()
 {
 	SetActorHiddenInGame(true);
 	SetActorTickEnabled(false);
+	BombMeshComponent->SetSimulatePhysics(false);
+	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	bIsBombActive = false;
+}
+
+void AEPBombBase::SetBombInHandOption()
+{
+	SetActorHiddenInGame(false);
+	SetActorTickEnabled(true);
 	BombMeshComponent->SetSimulatePhysics(false);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
@@ -75,7 +89,10 @@ void AEPBombBase::ActiveBombTimeTrigger()
 void AEPBombBase::MulticastRPCExplode_Implementation()
 {
 	BombGamePlayStatics->SpawnEmitterAtLocation(GetWorld(), BombParticleSystem, GetActorLocation());
-	DeactiveBomb();
+	if (HasAuthority())
+	{
+		DeactiveBomb();
+	}
 }
 
 

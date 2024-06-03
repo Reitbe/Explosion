@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "EPBombBase.h"
 #include "EPBombManager.generated.h"
 
 
@@ -20,9 +21,22 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+// Bomb Manager Function Section
+public:
+	void MakeBombObjectPool(TSubclassOf<AEPBombBase> BP_Bomb);
+	
+	TObjectPtr<AEPBombBase> TakeBomb();
+	//void ReturnBomb(TObjectPtr<AEPBombBase> Bomb);
 
-		
+// Bomb Manager Properties Section
+private:
+	TArray<TObjectPtr<AEPBombBase>> BombList;
+	TSubclassOf<AEPBombBase> BombToMake;
+
+	UPROPERTY(VisibleAnyWhere, Category = "Properties")
+	int8 MaxBombCount;
+
+	UPROPERTY(VisibleAnyWhere, Category = "Properties")
+	int8 CurrentBombCount;
+
 };

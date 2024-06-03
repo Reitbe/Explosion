@@ -22,9 +22,10 @@ public:
 
 // Set & Get Section
 public:
-	void SetBombOnwer(TSubclassOf<class AEPCharacterBase> _BombOwner) { BombOwner = _BombOwner; }
+	void SetBombOnwer(TObjectPtr<AActor> _BombOwner) { BombOwner = _BombOwner; }
 
 	TObjectPtr<class UStaticMeshComponent> GetBombMeshComponent() const { return BombMeshComponent; }
+	bool GetIsBombActive() const { return bIsBombActive; }
 	float GetBombMass() const { return BombMass; }
 
 // Replicate Section
@@ -36,7 +37,7 @@ protected:
 // Component Section
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class AEPCharacterBase> BombOwner;
+	TObjectPtr<AActor> BombOwner;
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	//TObjectPtr<class UCapsuleComponent> BombCollisionComponent;
@@ -54,6 +55,7 @@ protected:
 public:
 	void ActiveBomb();
 	void DeactiveBomb();
+	void SetBombInHandOption();
 	void ActiveBombTimeTrigger();
 
 
@@ -65,6 +67,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UParticleSystem> BombParticleSystem;
 
+// Bomb Manager
+public:
+	UPROPERTY()
+	TObjectPtr<class UEPBombManager> BombManager;
 
 // Bomb Stat(임시)
 protected:
@@ -80,4 +86,5 @@ protected:
 	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
 	float BombDelayTime;
 
+	uint8 bIsBombActive : 1;
 };

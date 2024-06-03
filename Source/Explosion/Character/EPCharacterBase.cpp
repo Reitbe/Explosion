@@ -4,6 +4,7 @@
 #include "EPCharacterBase.h"
 #include "Components/WidgetComponent.h"
 #include "Explosion/UI/EPNameTagWidget.h"
+#include "Explosion/Bomb/EPBombManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 AEPCharacterBase::AEPCharacterBase()
@@ -23,6 +24,9 @@ AEPCharacterBase::AEPCharacterBase()
 	// Mesh 설정
 	GetMesh() ->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+
+	// Bomb Manager 설정
+	BombManager = CreateDefaultSubobject<UEPBombManager>(TEXT("BombManager"));
 
 	// NameTag 설정
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
@@ -46,6 +50,12 @@ void AEPCharacterBase::BeginPlay()
 	Super::BeginPlay();
 	NameTagWidget = Cast<UEPNameTagWidget>(WidgetComponent->GetUserWidgetObject());
 	NameTagWidget->ShowPlayerNetRole(this);
+
+	// BombManager 초기화	
+	if (HasAuthority())
+	{
+		BombManager->MakeBombObjectPool(BP_Bomb);
+	}
 }
 
 // Called every frame

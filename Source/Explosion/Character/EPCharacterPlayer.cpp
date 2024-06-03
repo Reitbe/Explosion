@@ -6,6 +6,7 @@
 #include "Camera/CameraComponent.h"
 #include "Explosion/Animation/EPPlayerAnimInstance.h"
 #include "Explosion/Bomb/EPBombBase.h"
+#include "Explosion/Bomb/EPBombManager.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -145,12 +146,7 @@ void AEPCharacterPlayer::BeginPlay()
 		BombInHand = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FTransform::Identity);
 		if (BombInHand)
 		{
-			BombInHand->GetBombMeshComponent()->SetSimulatePhysics(false);
-			BombInHand->GetBombMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			BombInHand->SetActorHiddenInGame(false);
-			BombInHand->SetActorTickEnabled(true);
-			BombInHand->SetActorEnableCollision(false);
-
+			BombInHand->SetBombInHandOption();
 			FName BombSocket(TEXT("BombHolder"));
 			if (GetMesh()->DoesSocketExist(BombSocket))
 			{
@@ -396,9 +392,15 @@ void AEPCharacterPlayer::OnThrowingBomb()
 		FRotator BombInHandRotation = BombInHand->GetActorRotation();
 		FVector BombInHandLocation = BombInHand->GetActorLocation();
 
-		BombToThrow = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, BombInHandLocation, BombInHandRotation);
-		ThrowingPower = ThrowingDirection * ThrowingVelocityMultiplier * ThrowingVelocity * BombMass;
-		BombToThrow->GetBombMeshComponent()->AddImpulse(ThrowingPower);
+		//BombToThrow = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, BombInHandLocation, BombInHandRotation);
+		BombToThrow = BombManager->TakeBomb();
+		if (BombToThrow)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%s"), *BombToThrow->GetFName().ToString()));
+			BombToThrow->SetActorLocationAndRotation(BombInHandLocation, BombInHandRotation);
+			ThrowingPower = ThrowingDirection * ThrowingVelocityMultiplier * ThrowingVelocity * BombMass;
+			BombToThrow->GetBombMeshComponent()->AddImpulse(ThrowingPower);
+		}
 	}
 }
 

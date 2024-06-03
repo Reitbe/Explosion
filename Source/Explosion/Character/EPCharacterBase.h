@@ -30,7 +30,12 @@ public:
 	FOnThrowingBombDelegate OnThrowingBombDelegate;
 	FOnReloadingBombDelegate OnReloadingBombDelegate;
 
-// Bomb Section.
+// Bomb Manager Section.
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BombManager", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEPBombManager> BombManager;
+
+// Bomb Section
 protected:
 	UPROPERTY(EditAnywhere, Category = "Bomb", Meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AEPBombBase> BP_Bomb;
