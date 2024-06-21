@@ -26,12 +26,10 @@ public:
 	void MakeBombObjectPool(TSubclassOf<AEPBombBase> BP_Bomb);
 	
 	TObjectPtr<AEPBombBase> TakeBomb();
-	//void ReturnBomb(TObjectPtr<AEPBombBase> Bomb);
 
 // Bomb Manager Properties Section
 private:
 	TArray<TObjectPtr<AEPBombBase>> BombList;
-	TSubclassOf<AEPBombBase> BombToMake;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Properties")
 	int8 MaxBombCount;

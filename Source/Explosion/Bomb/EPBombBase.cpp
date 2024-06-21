@@ -54,6 +54,7 @@ void AEPBombBase::ActiveBomb()
 {
 	SetActorHiddenInGame(false);
 	SetActorTickEnabled(true);
+	//SetActorEnableCollision(true);
 	BombMeshComponent->SetSimulatePhysics(true);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	bIsBombActive = true;
@@ -63,6 +64,7 @@ void AEPBombBase::DeactiveBomb()
 {
 	SetActorHiddenInGame(true);
 	SetActorTickEnabled(false);
+	//SetActorEnableCollision(false);
 	BombMeshComponent->SetSimulatePhysics(false);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	bIsBombActive = false;
@@ -92,6 +94,7 @@ void AEPBombBase::MulticastRPCExplode_Implementation()
 	if (HasAuthority())
 	{
 		DeactiveBomb();
+		BombGamePlayStatics->ApplyRadialDamage(GetWorld(), 50.0f, GetActorLocation(), 500.0f, nullptr, TArray<AActor*>(), this, GetInstigatorController(), true, ECC_Visibility);
 	}
 }
 

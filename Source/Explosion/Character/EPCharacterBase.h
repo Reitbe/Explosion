@@ -30,7 +30,14 @@ public:
 	FOnThrowingBombDelegate OnThrowingBombDelegate;
 	FOnReloadingBombDelegate OnReloadingBombDelegate;
 
-// Bomb Manager Section.
+// Damage Section
+protected:
+	virtual void SetDead();
+	virtual void TempSetDamaged(float CurrentHp, float MaxHp);
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+
+// Bomb Manager Section
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BombManager", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UEPBombManager> BombManager;
@@ -52,9 +59,17 @@ protected:
 // UI
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UWidgetComponent> WidgetComponent;
+	TObjectPtr<class UWidgetComponent> OverHeadWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UEPNameTagWidget> NameTagWidget;
+	TObjectPtr<class UEPOverHeadWidget> OverHeadWidget;
 
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEPHUDWidget> HUDWidget;
+	TSubclassOf<class UEPHUDWidget> HUDWidgetClass;
+// Stat
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEPCharacterStatComponent> StatComponent;
 };

@@ -10,5 +10,14 @@ UCLASS()
 class EXPLOSION_API AEPBattleRoyalGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+
+public: 
+	AEPBattleRoyalGameMode();
+
+	virtual FTransform GetRandomStartTransform();
+	virtual void OnPlayerKilled(AController* Killer, AController* KilledPlayer, APawn* KilledPawn);
+
+protected:
+	TArray<TObjectPtr<class APlayerStart>> PlayerStartArray;
 	
 };

@@ -2,6 +2,7 @@
 
 
 #include "EPNameTagWidget.h"
+#include "Components/TextBlock.h"
 
 void UEPNameTagWidget::NativeConstruct()
 {
@@ -10,6 +11,11 @@ void UEPNameTagWidget::NativeConstruct()
 	//{
 	//	TxtNameTag->SetText(FText::FromString("TestName"));
 	//}
+}
+
+void UEPNameTagWidget::SetNameTag(FString Name)
+{
+	TxtNameTag->SetText(FText::FromString(Name));
 }
 
 void UEPNameTagWidget::ShowPlayerNetRole(TObjectPtr<APawn> Player)

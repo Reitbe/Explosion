@@ -7,6 +7,8 @@
 #include "Explosion/Animation/EPPlayerAnimInstance.h"
 #include "Explosion/Bomb/EPBombBase.h"
 #include "Explosion/Bomb/EPBombManager.h"
+#include "Explosion/Stat/EPCharacterStatComponent.h"
+#include "Explosion/GameData/EPBattleRoyalGameMode.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -160,6 +162,9 @@ void AEPCharacterPlayer::BeginPlay()
 		}
 	}
 
+	// 사망 바인딩
+	StatComponent->OnHpZero.AddUObject(this, &AEPCharacterPlayer::SetDead);
+
 	// 폭탄을 던지고 재장전 할 때의 대리자 연결
 	OnThrowingBombDelegate.BindUObject(this, &AEPCharacterPlayer::OnThrowingBomb);
 	OnReloadingBombDelegate.BindUObject(this, &AEPCharacterPlayer::OnReloadingBomb);
@@ -170,6 +175,53 @@ void AEPCharacterPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AEPCharacterPlayer, bIsAiming);
 	DOREPLIFETIME(AEPCharacterPlayer, bIsThrowing);
+}
+
+void AEPCharacterPlayer::SetDead()
+{
+	Super::SetDead();
+	//GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	//GetMesh()->SetSimulatePhysics(true);
+	if (BombInHand)
+	{
+		BombInHand->SetActorHiddenInGame(true);
+	}
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	DisableInput(PlayerController);
+
+	GetWorldTimerManager().SetTimer(DeadTimerHandle, this, &AEPCharacterPlayer::ResetPlayer, 5.0f, false);
+}
+
+void AEPCharacterPlayer::ResetPlayer()
+{
+	if (AnimInstance)
+	{
+		AnimInstance->StopAllMontages(0.0f);
+	}
+
+	//GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
+	//GetMesh()->SetSimulatePhysics(false);
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	EnableInput(PlayerController);
+	if (BombInHand)
+	{
+		BombInHand->SetActorHiddenInGame(false);
+	}
+
+	StatComponent->ResetHp();
+
+	if (HasAuthority())
+	{
+		AEPBattleRoyalGameMode* GameMode = Cast<AEPBattleRoyalGameMode>(GetWorld()->GetAuthGameMode());
+		if (GameMode)
+		{
+			FTransform NewTransform = GameMode->GetRandomStartTransform();
+			TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator());
+		}
+	}
+
 }
 
 void AEPCharacterPlayer::Tick(float DeltaTime)
@@ -396,7 +448,6 @@ void AEPCharacterPlayer::OnThrowingBomb()
 		BombToThrow = BombManager->TakeBomb();
 		if (BombToThrow)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%s"), *BombToThrow->GetFName().ToString()));
 			BombToThrow->SetActorLocationAndRotation(BombInHandLocation, BombInHandRotation);
 			ThrowingPower = ThrowingDirection * ThrowingVelocityMultiplier * ThrowingVelocity * BombMass;
 			BombToThrow->GetBombMeshComponent()->AddImpulse(ThrowingPower);

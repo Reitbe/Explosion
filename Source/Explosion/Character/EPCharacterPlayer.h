@@ -21,6 +21,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -29,6 +30,13 @@ public:
 protected:
 	TObjectPtr<APlayerController> PlayerController;
 
+// Dead and Respawn Section
+public:
+	FTimerHandle DeadTimerHandle;
+
+protected:
+	virtual void SetDead() override;
+	void ResetPlayer();
 
 // Input Section
 protected:

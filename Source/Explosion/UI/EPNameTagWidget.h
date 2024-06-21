@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/TextBlock.h"
 #include "EPNameTagWidget.generated.h"
 
 UCLASS()
@@ -16,10 +15,11 @@ public:
 	virtual void NativeConstruct() override;
 
 public:
-	FORCEINLINE void SetNameTag(FString Name) { TxtNameTag->SetText(FText::FromString(Name)); }
+	void SetNameTag(FString Name);
+	//임시로 네트워크 상에서 플레이어의 역할을 나타낸다
 	void ShowPlayerNetRole(TObjectPtr<APawn> Player);
 
-public:
+protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UTextBlock> TxtNameTag;
 };
