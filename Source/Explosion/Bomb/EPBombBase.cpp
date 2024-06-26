@@ -35,9 +35,6 @@ AEPBombBase::AEPBombBase()
 	BombAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("BombAudioComponent"));
 	BombAudioComponent->SetupAttachment(RootComponent);
 
-	// 옵션 설정(임시)
-	BombMass = 20.0f;
-	BombDelayTime = 3.0f;
 }
 
 void AEPBombBase::BeginPlay()
@@ -94,7 +91,7 @@ void AEPBombBase::MulticastRPCExplode_Implementation()
 	if (HasAuthority())
 	{
 		DeactiveBomb();
-		BombGamePlayStatics->ApplyRadialDamage(GetWorld(), 50.0f, GetActorLocation(), 500.0f, nullptr, TArray<AActor*>(), this, GetInstigatorController(), true, ECC_Visibility);
+		BombGamePlayStatics->ApplyRadialDamage(GetWorld(), BombDamage, GetActorLocation(), BombAreaRadius, nullptr, TArray<AActor*>(), this, GetInstigatorController(), true, ECC_Visibility);
 	}
 }
 

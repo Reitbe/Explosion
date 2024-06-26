@@ -60,6 +60,13 @@ AEPCharacterBase::AEPCharacterBase()
 	}
 }
 
+void AEPCharacterBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	// 게임 인스턴스로부터 정보 가져오기.
+	//StatComponent->SetBaseStat();
+}
+
 // Called when the game starts or when spawned
 void AEPCharacterBase::BeginPlay()
 {
@@ -133,6 +140,10 @@ void AEPCharacterBase::Tick(float DeltaTime)
 void AEPCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void AEPCharacterBase::TakeItem(AEPItemBase* NewItemBase)
+{
 }
 
 void AEPCharacterBase::SetDead()

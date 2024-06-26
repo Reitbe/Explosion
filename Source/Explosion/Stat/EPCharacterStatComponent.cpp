@@ -3,6 +3,7 @@
 
 #include "EPCharacterStatComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Explosion/GameData/EPGameInstance.h"
 #include "Explosion/Explosion.h"
 // EP_SUBLOG(LogExplosion, Log, TEXT("%s"), TEXT("전체 다 몽타주를 재생"));
 
@@ -14,8 +15,8 @@ UEPCharacterStatComponent::UEPCharacterStatComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicated(true);
 
-	MaxHp = 100.0f;
-	CurrentHp = MaxHp;
+	//MaxHp = 100.0f;
+	//CurrentHp = MaxHp;
 }
 
 
@@ -23,9 +24,7 @@ UEPCharacterStatComponent::UEPCharacterStatComponent()
 void UEPCharacterStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
+	SetBaseStat();
 }
 
 void UEPCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -58,6 +57,19 @@ float UEPCharacterStatComponent::TakeDamage(float Damage)
 
 void UEPCharacterStatComponent::ResetHp()
 {
+	SetHp(MaxHp);
+}
+
+void UEPCharacterStatComponent::RecoverHp(float Amount)
+{
+	SetHp(CurrentHp + Amount);
+}
+
+void UEPCharacterStatComponent::SetBaseStat()
+{
+	UEPGameInstance* GameInstance = Cast<UEPGameInstance>(GetWorld()->GetGameInstance());
+	BaseStat = GameInstance->GetDefaultCharacterStat();
+	MaxHp = BaseStat.MaxHp;
 	SetHp(MaxHp);
 }
 

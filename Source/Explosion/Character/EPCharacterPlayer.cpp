@@ -9,6 +9,8 @@
 #include "Explosion/Bomb/EPBombManager.h"
 #include "Explosion/Stat/EPCharacterStatComponent.h"
 #include "Explosion/GameData/EPBattleRoyalGameMode.h"
+#include "Explosion/Item/EPItemBase.h"
+#include "Explosion/EPCharacterStat.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -310,6 +312,20 @@ void AEPCharacterPlayer::ServerRPCAimingOn_Implementation(bool bIsAimingOn)
 	bIsAiming = bIsAimingOn;
 	
 	OnRep_Aiming();
+}
+
+void AEPCharacterPlayer::TakeItem(AEPItemBase* NewItemBase)
+{
+	if (NewItemBase)
+	{
+		switch (NewItemBase->Type)
+		{
+		case EItemType::IT_Health:
+			float ItemHpValue = NewItemBase->ItemStat.MaxHp;
+			StatComponent->RecoverHp(ItemHpValue);
+			break;
+		}
+	}
 }
 
 void AEPCharacterPlayer::OnRep_Aiming()

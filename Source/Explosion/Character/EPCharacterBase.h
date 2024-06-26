@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Explosion/Interface/EpCharacterItemInterface.h"
 #include "EPCharacterBase.generated.h"
 
 DECLARE_DELEGATE(FOnThrowingBombDelegate);
 DECLARE_DELEGATE(FOnReloadingBombDelegate);
 
 UCLASS()
-class EXPLOSION_API AEPCharacterBase : public ACharacter
+class EXPLOSION_API AEPCharacterBase : public ACharacter, public IEPCharacterItemInterface
 {
 	GENERATED_BODY()
 
@@ -18,6 +19,7 @@ public:
 	AEPCharacterBase();
 
 protected:
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 
 public:	
@@ -29,6 +31,10 @@ public:
 public:
 	FOnThrowingBombDelegate OnThrowingBombDelegate;
 	FOnReloadingBombDelegate OnReloadingBombDelegate;
+
+// Interface Section
+public:
+	virtual void TakeItem(class AEPItemBase* NewItemBase) override;
 
 // Damage Section
 protected:

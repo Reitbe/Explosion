@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Explosion/EPCharacterStat.h"
 #include "EPCharacterStatComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHpChangedDelegate, float /*CurrentHp*/, float /*MaxHp*/);
@@ -24,19 +25,19 @@ public:
 	FOnHpZeroDelegate OnHpZero;
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 // 
 public:
+	void SetBaseStat();
 	float TakeDamage(float Damage);
 
 	void ResetHp();
+	void RecoverHp(float Amount);
 
 	float GetMaxHp() const { return MaxHp; }
 	float GetCurrentHp() const { return CurrentHp; }
@@ -50,6 +51,9 @@ protected:
 	
 // Stat Section
 protected:
+	UPROPERTY(EditDefaultsOnly, Category = Stat)
+	FEPCharacterStat BaseStat;
+
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentHp, Transient, VisibleInstanceOnly, Category = Stat)
 	float CurrentHp;
 

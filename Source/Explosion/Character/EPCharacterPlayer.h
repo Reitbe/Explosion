@@ -100,6 +100,11 @@ protected:
 	float DefaultSpringArmLength;
 	float ZoomedSpringArmLength;
 
+// Item Section
+protected:
+	UFUNCTION()
+	virtual void TakeItem(AEPItemBase* NewItemBase) override;
+
 
 // Aiming & Throwing Section
 protected:

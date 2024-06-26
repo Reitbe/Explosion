@@ -10,9 +10,6 @@ void UEPHpBarWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	MaxHp = 100.0f;
-	CurrentHp = MaxHp;
-
 	SetHpBar();
 	SetHpText();
 }
