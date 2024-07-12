@@ -8,6 +8,7 @@
 #include "EPCharacterStatComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHpChangedDelegate, float /*CurrentHp*/, float /*MaxHp*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnHpZeroThreeParamsDelegate, AController* /*KillerPlayer*/, AController* /*KilledPlayer*/, AActor* /*DamageCauser*/);
 DECLARE_MULTICAST_DELEGATE(FOnHpZeroDelegate);
 
 
@@ -22,6 +23,7 @@ public:
 // Delegate Section
 public:
 	FOnHpChangedDelegate OnHpChanged;
+	FOnHpZeroThreeParamsDelegate OnHpZeroThreeParams;
 	FOnHpZeroDelegate OnHpZero;
 
 protected:
@@ -34,7 +36,7 @@ public:
 // 
 public:
 	void SetBaseStat();
-	float TakeDamage(float Damage);
+	float TakeDamage(float Damage, AController* EventCauser, AController* EventInstigator, AActor* DamageCauser);
 
 	void ResetHp();
 	void RecoverHp(float Amount);

@@ -19,6 +19,6 @@ FTransform AEPBattleRoyalGameMode::GetRandomStartTransform()
     return PlayerStartArray[RandomIndex]->GetActorTransform();
 }
 
-void AEPBattleRoyalGameMode::OnPlayerKilled(AController* Killer, AController* KilledPlayer, APawn* KilledPawn)
+void AEPBattleRoyalGameMode::OnPlayerKilled(AController* KillerPlayer, AController* KilledPlayer, AActor* DamageCauser)
 {
 }

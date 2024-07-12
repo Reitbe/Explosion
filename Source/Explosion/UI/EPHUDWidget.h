@@ -19,4 +19,7 @@ public:
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UEPHpBarWidget> HpBarWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UEPTimerWidget> TimerWidget;
 };

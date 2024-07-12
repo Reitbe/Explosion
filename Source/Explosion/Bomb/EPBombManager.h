@@ -32,9 +32,9 @@ private:
 	TArray<TObjectPtr<AEPBombBase>> BombList;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Properties")
-	int8 MaxBombCount;
+	int32 MaxBombCount;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Properties")
-	int8 CurrentBombCount;
+	int32 CurrentBombCount;
 
 };

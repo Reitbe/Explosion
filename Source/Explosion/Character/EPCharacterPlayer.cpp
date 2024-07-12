@@ -8,7 +8,8 @@
 #include "Explosion/Bomb/EPBombBase.h"
 #include "Explosion/Bomb/EPBombManager.h"
 #include "Explosion/Stat/EPCharacterStatComponent.h"
-#include "Explosion/GameData/EPBattleRoyalGameMode.h"
+#include "Explosion/GameData/EPDeathMatchGameMode.h"
+#include "Explosion/GameData/EPGameState.h"
 #include "Explosion/Item/EPItemBase.h"
 #include "Explosion/EPCharacterStat.h"
 #include "EnhancedInputComponent.h"
@@ -64,7 +65,7 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	static ConstructorHelpers::FObjectFinder<UInputAction> InputActoinLookFinder
 	(TEXT("/Game/Input/IA_Looking.IA_Looking"));
 	if (InputActoinLookFinder.Succeeded())
-	{
+	{ 
 		Looking = InputActoinLookFinder.Object;
 	}
 
@@ -122,6 +123,8 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 
 	bIsAiming = false;
 	bIsThrowing = false;
+
+	RespawnTime = 3.0f;
 }
 
 void AEPCharacterPlayer::BeginPlay()
@@ -134,7 +137,7 @@ void AEPCharacterPlayer::BeginPlay()
 	{
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
 		if (Subsystem != nullptr) {
-			Subsystem->AddMappingContext(InputMappingContext, 0);
+			Subsystem->AddMappingContext(InputMappingContext, 1);
 		}
 	}
 
@@ -192,7 +195,7 @@ void AEPCharacterPlayer::SetDead()
 	SetActorEnableCollision(false);
 	DisableInput(PlayerController);
 
-	GetWorldTimerManager().SetTimer(DeadTimerHandle, this, &AEPCharacterPlayer::ResetPlayer, 5.0f, false);
+	GetWorldTimerManager().SetTimer(DeadTimerHandle, this, &AEPCharacterPlayer::ResetPlayer, RespawnTime, false);
 }
 
 void AEPCharacterPlayer::ResetPlayer()
@@ -202,11 +205,14 @@ void AEPCharacterPlayer::ResetPlayer()
 		AnimInstance->StopAllMontages(0.0f);
 	}
 
-	//GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
-	//GetMesh()->SetSimulatePhysics(false);
+	if (GetWorld()->GetGameState<AEPGameState>()->GetIsSetupEndMatch() == false)
+	{
+		EnableInput(PlayerController);
+	}
+
 	SetActorHiddenInGame(false);
 	SetActorEnableCollision(true);
-	EnableInput(PlayerController);
+	
 	if (BombInHand)
 	{
 		BombInHand->SetActorHiddenInGame(false);
@@ -216,7 +222,7 @@ void AEPCharacterPlayer::ResetPlayer()
 
 	if (HasAuthority())
 	{
-		AEPBattleRoyalGameMode* GameMode = Cast<AEPBattleRoyalGameMode>(GetWorld()->GetAuthGameMode());
+		AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
 		if (GameMode)
 		{
 			FTransform NewTransform = GameMode->GetRandomStartTransform();

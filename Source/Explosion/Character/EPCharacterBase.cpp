@@ -7,6 +7,7 @@
 #include "Explosion/UI/EPHUDWidget.h"
 #include "Explosion/Bomb/EPBombManager.h"
 #include "Explosion/Stat/EPCharacterStatComponent.h"
+#include "Explosion/GameData/EPDeathMatchGameMode.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Explosion/Explosion.h"
 // EP_LOG(LogExplosion, Log, TEXT("%s"), TEXT("전체 다 몽타주를 재생"));
@@ -75,6 +76,11 @@ void AEPCharacterBase::BeginPlay()
 	if (HasAuthority())
 	{
 		BombManager->MakeBombObjectPool(BP_Bomb);
+		AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
+		if (GameMode)
+		{
+			StatComponent->OnHpZeroThreeParams.AddUObject(GameMode, &AEPDeathMatchGameMode::OnPlayerKilled);
+		}
 	}
 
 	// OverHeadWidget 초기화
@@ -158,8 +164,16 @@ void AEPCharacterBase::TempSetDamaged(float CurrentHp, float MaxHp)
 float AEPCharacterBase::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
-	StatComponent->TakeDamage(Damage);
-	EP_LOG(LogExplosion, Log, TEXT("%s"), TEXT("스텟에 데미지 입힘"));
+
+	AController* EventCauser = GetController();
+	StatComponent->TakeDamage(Damage, EventCauser, EventInstigator, DamageCauser);
+
+	//AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
+	//if (GameMode)
+	//{
+	//	AController* KilledPlayer = GetController();
+	//	GameMode->OnPlayerKilled(EventInstigator, KilledPlayer, );
+	//}
 	return 0.0f;
 }
 

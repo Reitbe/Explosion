@@ -43,7 +43,7 @@ void UEPCharacterStatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	// ...
 }
 
-float UEPCharacterStatComponent::TakeDamage(float Damage)
+float UEPCharacterStatComponent::TakeDamage(float Damage, AController* EventCauser, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float PrevHp = CurrentHp;
 	const float ActualDamage = FMath::Clamp<float>(Damage, 0, Damage);
@@ -51,6 +51,7 @@ float UEPCharacterStatComponent::TakeDamage(float Damage)
 	if (CurrentHp <= KINDA_SMALL_NUMBER)
 	{
 		OnHpZero.Broadcast();
+		OnHpZeroThreeParams.Broadcast(EventInstigator, EventCauser, DamageCauser);
 	}
 	return ActualDamage;
 }

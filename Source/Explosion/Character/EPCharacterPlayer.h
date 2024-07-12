@@ -150,4 +150,9 @@ protected:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Throwing, EditAnyWhere, Category = "Bomb")
 	uint8 bIsThrowing : 1;
+
+// Respawn Section
+protected:
+	UPROPERTY(EditAnyWhere, Category = "Respawn")
+	float RespawnTime;
 };

@@ -91,7 +91,8 @@ void AEPBombBase::MulticastRPCExplode_Implementation()
 	if (HasAuthority())
 	{
 		DeactiveBomb();
-		BombGamePlayStatics->ApplyRadialDamage(GetWorld(), BombDamage, GetActorLocation(), BombAreaRadius, nullptr, TArray<AActor*>(), this, GetInstigatorController(), true, ECC_Visibility);
+		AController* BombOwnerController = GetOwner()->GetInstigatorController();
+		BombGamePlayStatics->ApplyRadialDamage(GetWorld(), BombDamage, GetActorLocation(), BombAreaRadius, nullptr, TArray<AActor*>(), this, BombOwnerController, true, ECC_Visibility);
 	}
 }
 
