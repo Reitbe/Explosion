@@ -4,7 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "Explosion/GameData/EPPlayerState.h"
 #include "EPGameState.generated.h"
+
+USTRUCT()
+struct FScoreBoard
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY()
+	TObjectPtr<class AEPPlayerState> PlayerState;
+
+	UPROPERTY()
+	int32 Score;
+
+	bool operator==(const FScoreBoard& Other) const
+	{
+		return (PlayerState == Other.PlayerState) && (Score == Other.Score);
+	}
+};
 
 UCLASS()
 class EXPLOSION_API AEPGameState : public AGameState
@@ -21,10 +40,13 @@ public:
 
 public:
 	//UPROPERTY(Replicated)
-	TMap<TObjectPtr<APlayerState>, int32> ScoreBoard;
+	//TMap<TObjectPtr<APlayerState>, int32> ScoreBoard;
+
+	UPROPERTY(Replicated)
+	TArray<FScoreBoard> ScoreBoard;
 
 	void UpdateScoreBoard(TObjectPtr<class AEPPlayerState> KillerGameState);
-	void UpdateScoreBoard();
+	//void UpdateScoreBoard();
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

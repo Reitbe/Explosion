@@ -76,6 +76,19 @@ void AEPPlayerController::BeginPlay()
 	if (Subsystem != nullptr) {
 		Subsystem->AddMappingContext(InputMappingContext, 0);
 	}
+
+	if (IsLocalController())
+	{
+		if (ScoreBoardWidgetClass)
+		{
+			ScoreBoardWidget = CreateWidget<UEPScoreBoardWidget>(this, ScoreBoardWidgetClass);
+		}
+
+		if (GameMenuWidgetClass)
+		{
+			GameMenuWidget = CreateWidget<UEPGameMenuWidget>(this, GameMenuWidgetClass);
+		}
+	}
 }
 
 void AEPPlayerController::SetupInputComponent()
@@ -89,9 +102,31 @@ void AEPPlayerController::SetupInputComponent()
 	}
 }
 
-void AEPPlayerController::ShowScoreBoard()
+void AEPPlayerController::ClientRPCUpdateScoreBoard_Implementation()
 {
 	if (IsLocalController() && ScoreBoardWidget)
+	{
+		ScoreBoardWidget->UpdateScoreBoard();
+	}
+}
+
+void AEPPlayerController::ClientRPCSetupEndMatch_Implementation()
+{
+	if (IsLocalController())
+	{
+		MatchEndWidget = CreateWidget<UUserWidget>(this, MatchEndWidgetClass);
+		if (MatchEndWidget)
+		{
+			MatchEndWidget->AddToViewport();
+		}
+	}
+	DisableInput(this);
+	GetPawn()->DisableInput(this);
+}
+
+void AEPPlayerController::ShowScoreBoard()
+{
+	if (ScoreBoardWidget)
 	{
 		ScoreBoardWidget->AddToViewport();
 	}
@@ -99,7 +134,7 @@ void AEPPlayerController::ShowScoreBoard()
 
 void AEPPlayerController::HideScoreBoard()
 {
-	if (IsLocalController() && ScoreBoardWidget)
+	if (ScoreBoardWidget)
 	{
 		ScoreBoardWidget->RemoveFromParent();
 	}
@@ -107,22 +142,22 @@ void AEPPlayerController::HideScoreBoard()
 
 void AEPPlayerController::ShowGameMenu()
 {	
-	AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
-	if (EPGameState->ScoreBoard.Num() == 0)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ScoreBoard is Empty"));
-	}
-	for (auto& PlayerScore : EPGameState->ScoreBoard)
-	{
-		AEPPlayerState* EPPlayerState = Cast<AEPPlayerState>(PlayerScore.Key);
-		if (EPPlayerState)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Player: %s, Score: %d"), *EPPlayerState->GetPlayerName(), PlayerScore.Value));
-		}
-	}
+	//AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
+	//if (EPGameState->ScoreBoard.Num() == 0)
+	//{
+	//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ScoreBoard is Empty"));
+	//}
+	//for (auto& PlayerScoreStruct : EPGameState->ScoreBoard)
+	//{
+	//	AEPPlayerState* EPPlayerState = PlayerScoreStruct.PlayerState;
+	//	if (EPPlayerState)
+	//	{
+	//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Player: %s, Score: %d"), *EPPlayerState->GetPlayerName(), PlayerScoreStruct.Score));
+	//	}
+	//}
 
 
-	if (IsLocalController() && GameMenuWidget)
+	if (GameMenuWidget)
 	{
 		if(GameMenuWidget->IsInViewport())
 		{
@@ -162,18 +197,6 @@ bool AEPPlayerController::ServerRequestServerTime_Validate(APlayerController* re
 	return true;
 }
 
-void AEPPlayerController::MulticastRPCSetupEndMatch_Implementation()
-{
-	if (IsLocalController())
-	{
-		MatchEndWidget = CreateWidget<UUserWidget>(this, MatchEndWidgetClass);
-		if (MatchEndWidget)
-		{
-			MatchEndWidget->AddToViewport();
-		}
-	}
-	DisableInput(this);
-	GetPawn()->DisableInput(this);
-}
+
 
 

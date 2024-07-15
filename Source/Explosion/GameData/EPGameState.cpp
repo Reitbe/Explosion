@@ -33,41 +33,48 @@ double AEPGameState::GetServerWorldTimeSeconds() const
 	return 0.0;
 }
 
-void AEPGameState::UpdateScoreBoard()
-{
-	for (auto& Player : PlayerArray)
-	{
-		AEPPlayerState* EPPlayerState = Cast<AEPPlayerState>(Player);
-		if (EPPlayerState)
-		{
-			int32 KillCount = EPPlayerState->GetKillCount();
-			if (ScoreBoard.Contains(EPPlayerState))
-			{
-				ScoreBoard[EPPlayerState] = KillCount * KillScoreMultiplier;
-			}
-			else
-			{
-				ScoreBoard.Add(EPPlayerState, KillCount * KillScoreMultiplier);
-			}
-		}
-	}
-}
+//void AEPGameState::UpdateScoreBoard()
+//{
+//	for (auto& Player : PlayerArray)
+//	{
+//		AEPPlayerState* EPPlayerState = Cast<AEPPlayerState>(Player);
+//		if (EPPlayerState)
+//		{
+//			int32 KillCount = EPPlayerState->GetKillCount();
+//			
+//
+//			if (ScoreBoard.Contains(EPPlayerState))
+//			{
+//				ScoreBoard[EPPlayerState] = KillCount * KillScoreMultiplier;
+//			}
+//			else
+//			{
+//				ScoreBoard.Add(EPPlayerState, KillCount * KillScoreMultiplier);
+//			}
+//		}
+//	}
+//}
 
 void AEPGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	//DOREPLIFETIME(AEPGameState, ScoreBoard);
+	DOREPLIFETIME(AEPGameState, ScoreBoard);
 	DOREPLIFETIME(AEPGameState, bIsSetupEndMatch);
 }
 
 
 void AEPGameState::UpdateScoreBoard(TObjectPtr<AEPPlayerState> KillerGameState)
 {
-	if(ScoreBoard.Contains(KillerGameState))
+	// ScoreBoard에서 가진 플레이어 스테이트가 이거랑 맞는지 확인 -> 맞으면 업데이트.
+	for (auto& PlyserScoreStruct : ScoreBoard)
 	{
-		int32 KillCount = KillerGameState->GetKillCount();
-		ScoreBoard[KillerGameState] = KillCount * KillScoreMultiplier;
-	}
-	ScoreBoard.ValueSort([](int32 A, int32 B) { return A > B; });
+		if (PlyserScoreStruct.PlayerState == KillerGameState)
+		{
+			int32 KillCount = KillerGameState->GetKillCount();
+			PlyserScoreStruct.Score = KillCount * KillScoreMultiplier;
+			break;
+		}
+	}	
+	ScoreBoard.Sort([](FScoreBoard A, FScoreBoard B) { return A.Score > B.Score; });
 }
 

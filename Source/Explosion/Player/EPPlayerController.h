@@ -19,13 +19,13 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+// UI 표시
 public:
-	virtual void SetupInputComponent() override;
+	UFUNCTION(Client, Reliable)
+	void ClientRPCSetupEndMatch();
 
-	float GetServerTime() const { return ServerTime; }
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastRPCSetupEndMatch();
+	UFUNCTION(Client, Reliable)
+	void ClientRPCUpdateScoreBoard();
 
 
 protected:
@@ -33,9 +33,12 @@ protected:
 	void HideScoreBoard();
 	void ShowGameMenu();
 
+// 서버 시간 동기화
+public:
+	float GetServerTime() const { return ServerTime; }
+
 protected:
 	virtual void ReceivedPlayer() override;
-	
 
 	UFUNCTION(Client, Reliable)
 	void ClientReportServerTime(float requestWorldTime, float serverTime);
@@ -43,6 +46,10 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerRequestServerTime(APlayerController* requestor, float requestWorldTime);
 	
+
+// 입력 
+public:
+	virtual void SetupInputComponent() override;
 
 protected:
 	UPROPERTY(EditAnyWhere, Category = "Enhanced Input")
@@ -55,6 +62,7 @@ protected:
 	TObjectPtr<class UInputAction> ShowingGameMenu;
 
 
+// UI 
 protected:
 	UPROPERTY(EditAnyWhere, Category = "UI")
 	TSubclassOf<class UUserWidget> MatchEndWidgetClass;

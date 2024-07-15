@@ -39,7 +39,7 @@ void AEPDeathMatchGameMode::PostLogin(APlayerController* NewPlayer)
 	AEPGameState* EPGameState = GetGameState<AEPGameState>();
 	if (EPGameState)
 	{
-		EPGameState->ScoreBoard.Add(NewPlayer->PlayerState, 0);
+		EPGameState->ScoreBoard.Add(FScoreBoard(Cast<AEPPlayerState>(NewPlayer->PlayerState), 0));
 	}
 }
 
@@ -48,8 +48,20 @@ void AEPDeathMatchGameMode::Logout(AController* Exiting)
 	Super::Logout(Exiting);
 	AEPGameState* EPGameState = GetGameState<AEPGameState>();
 	if (EPGameState)
-	{
-		EPGameState->ScoreBoard.Remove(Exiting->PlayerState);
+	{	
+		if (int32 idx = EPGameState->ScoreBoard.Find(FScoreBoard(Cast<AEPPlayerState>(Exiting->PlayerState), 0)) != INDEX_NONE)
+		{
+			EPGameState->ScoreBoard.RemoveAt(idx);
+		}
+
+		//for (auto& PlyserScoreStruct : EPGameState->ScoreBoard)
+		//{
+		//	if (PlyserScoreStruct.PlayerState == Cast<AEPPlayerState>(Exiting->PlayerState))
+		//	{
+		//		EPGameState->ScoreBoard.Remove(PlyserScoreStruct);
+		//		break;
+		//	}
+		//}
 	}
 }
 
@@ -108,12 +120,28 @@ void AEPDeathMatchGameMode::OnPlayerKilled(AController* KillerPlayer, AControlle
 	EPGameState->UpdateScoreBoard(KillerPlayerState); // 스코어보드 업데이트
 
 	// 스코어 리미트 체크
-	int32 HighestScore = EPGameState->ScoreBoard[KillerPlayerState];
-	if (HighestScore >= EPGameState->GetMatchScoreLimit())
+	if (EPGameState->ScoreBoard.Num() > 0)
 	{
-		SetTheEndMatch();
+		int32 HighestScore = EPGameState->ScoreBoard[0].Score;
+		if (HighestScore >= EPGameState->GetMatchScoreLimit())
+		{
+			SetTheEndMatch();
+		}
 	}
 
+	// 개별 스코어 보드 업데이트
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PlayerController = It->Get();
+		if (PlayerController)
+		{
+			AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(PlayerController);
+			if (EPPlayerController)
+			{
+				EPPlayerController->ClientRPCUpdateScoreBoard();
+			}
+		}
+	}
 }
 
 void AEPDeathMatchGameMode::SetTheEndMatch()
@@ -134,7 +162,7 @@ void AEPDeathMatchGameMode::SetTheEndMatch()
 			AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(PlayerController);
 			if (EPPlayerController)
 			{
-				EPPlayerController->MulticastRPCSetupEndMatch();
+				EPPlayerController->ClientRPCSetupEndMatch();
 			}
 		}
 	}
