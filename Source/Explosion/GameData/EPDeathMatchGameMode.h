@@ -28,6 +28,7 @@ public:
 
 protected:
 	void SetTheEndMatch();
+	void EndMatch();
 
 protected:
 	TSubclassOf<class APlayerStart> PlayerStartPointClass;
@@ -42,5 +43,7 @@ protected:
 protected:
 	int32 MatchScoreLimit;
 	float MatchTimeLimit;
+
+	int32 ReturnToLobbyDelay;
 
 };

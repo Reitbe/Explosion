@@ -5,11 +5,17 @@
 #include "Explosion/GameData/EPPlayerState.h"
 #include "Explosion/GameData/EPGameState.h"
 #include "Explosion/Player/EPPlayerController.h"
+#include "Explosion/Character/EPCharacterPlayer.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
 AEPDeathMatchGameMode::AEPDeathMatchGameMode()
 {
+	GameStateClass = AEPGameState::StaticClass();
+	PlayerControllerClass = AEPPlayerController::StaticClass();
+	PlayerStateClass = AEPPlayerState::StaticClass();
+	DefaultPawnClass = AEPCharacterPlayer::StaticClass();
+
 	static ConstructorHelpers::FClassFinder<APlayerStart> PlayerStartPointClassFinder
 	(TEXT("/Game/Map/BP_PlayerSpawnPoint.BP_PlayerSpawnPoint_C"));
 	if (PlayerStartPointClassFinder.Class)
@@ -25,7 +31,10 @@ AEPDeathMatchGameMode::AEPDeathMatchGameMode()
 	}
 
 	MatchScoreLimit = 30;
-	MatchTimeLimit = 300.0f;
+	//MatchTimeLimit = 300.0f;
+	MatchTimeLimit = 6.0f; // 게임 스테이트에서 지정할 것.
+
+	ReturnToLobbyDelay = 10.0f;
 }
 
 void AEPDeathMatchGameMode::PostInitializeComponents()
@@ -49,19 +58,16 @@ void AEPDeathMatchGameMode::Logout(AController* Exiting)
 	AEPGameState* EPGameState = GetGameState<AEPGameState>();
 	if (EPGameState)
 	{	
-		if (int32 idx = EPGameState->ScoreBoard.Find(FScoreBoard(Cast<AEPPlayerState>(Exiting->PlayerState), 0)) != INDEX_NONE)
+		AEPPlayerState* ExitingPlayerState = Cast<AEPPlayerState>(Exiting->PlayerState);
+		
+		if (int32 idx = EPGameState->ScoreBoard.Find(FScoreBoard(ExitingPlayerState, 0)) != INDEX_NONE)
 		{
-			EPGameState->ScoreBoard.RemoveAt(idx);
+			if (EPGameState->ScoreBoard.IsValidIndex(idx))
+			{
+				FString PName = EPGameState->ScoreBoard[idx].PlayerState->GetPlayerName();
+				EPGameState->ScoreBoard.RemoveAt(idx);
+			}
 		}
-
-		//for (auto& PlyserScoreStruct : EPGameState->ScoreBoard)
-		//{
-		//	if (PlyserScoreStruct.PlayerState == Cast<AEPPlayerState>(Exiting->PlayerState))
-		//	{
-		//		EPGameState->ScoreBoard.Remove(PlyserScoreStruct);
-		//		break;
-		//	}
-		//}
 	}
 }
 
@@ -163,6 +169,26 @@ void AEPDeathMatchGameMode::SetTheEndMatch()
 			if (EPPlayerController)
 			{
 				EPPlayerController->ClientRPCSetupEndMatch();
+			}
+		}
+	}
+
+	FTimerHandle EndMatchTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(EndMatchTimerHandle, this, &AEPDeathMatchGameMode::EndMatch, ReturnToLobbyDelay, false);
+}
+
+void AEPDeathMatchGameMode::EndMatch()
+{
+	// 접속중인 모든클라에 대하여 종료하기. 그리고 로비로 이동.
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PlayerController = It->Get();
+		if (PlayerController)
+		{
+			AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(PlayerController);
+			if (EPPlayerController)
+			{
+				EPPlayerController->ClientRPCEndMatch();
 			}
 		}
 	}

@@ -16,10 +16,14 @@ public:
 	virtual void NativeConstruct() override;
 	void UpdateHpBar(float NewCurrentHp, float NewMaxHp);
 
-protected:
+public:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<class UEPHpBarWidget> HpBarWidget;
+	TObjectPtr<class UVerticalBox> ChargingBarFrame;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UEPTimerWidget> TimerWidget;
+
+protected:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UEPHpBarWidget> HpBarWidget;
 };

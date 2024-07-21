@@ -11,7 +11,6 @@
 // Sets default values
 AEPItemBase::AEPItemBase()
 {
-	SetReplicates(true);
 
  	ItemMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMeshComponent"));
 	ItemBaseMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemBaseMeshComponent"));
@@ -51,6 +50,7 @@ AEPItemBase::AEPItemBase()
 void AEPItemBase::BeginPlay()
 {
 	Super::BeginPlay();
+	SetReplicates(true);
 }
 
 void AEPItemBase::PostInitializeComponents()

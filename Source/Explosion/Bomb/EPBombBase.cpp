@@ -14,9 +14,6 @@
 AEPBombBase::AEPBombBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	SetReplicates(true);
-	SetReplicateMovement(true);
 	
 	SetActorHiddenInGame(true);
 	SetActorTickEnabled(false);
@@ -40,6 +37,8 @@ AEPBombBase::AEPBombBase()
 void AEPBombBase::BeginPlay()
 {
 	Super::BeginPlay();
+	SetReplicates(true);
+	SetReplicateMovement(true);
 }
 
 void AEPBombBase::Tick(float DeltaTime)

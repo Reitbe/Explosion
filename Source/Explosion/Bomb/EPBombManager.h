@@ -18,7 +18,6 @@ public:
 	UEPBombManager();
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 // Bomb Manager Function Section
@@ -28,7 +27,7 @@ public:
 	TObjectPtr<AEPBombBase> TakeBomb();
 
 // Bomb Manager Properties Section
-private:
+protected:
 	TArray<TObjectPtr<AEPBombBase>> BombList;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Properties")

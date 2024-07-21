@@ -10,13 +10,16 @@
 #include "GameFramework/GameStateBase.h"
 #include "Explosion/UI/EPGameMenuWidget.h"
 #include "Explosion/UI/EPScoreBoardWidget.h"
+#include "Explosion/UI/EPGameEndWidget.h"
 #include "Explosion/GameData/EPGameState.h"
 #include "Explosion/GameData/EPPlayerState.h"
+#include "Components/Button.h"
 
 
 
 AEPPlayerController::AEPPlayerController()
 {
+
 // 입력
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> InputMappingContextFinder
 	(TEXT("/Game/Input/IMC_PlayerController.IMC_PlayerController"));
@@ -82,12 +85,25 @@ void AEPPlayerController::BeginPlay()
 		if (ScoreBoardWidgetClass)
 		{
 			ScoreBoardWidget = CreateWidget<UEPScoreBoardWidget>(this, ScoreBoardWidgetClass);
+			ScoreBoardWidget->AddToViewport();
+			ScoreBoardWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 
 		if (GameMenuWidgetClass)
 		{
 			GameMenuWidget = CreateWidget<UEPGameMenuWidget>(this, GameMenuWidgetClass);
+			GameMenuWidget->AddToViewport();
+			GameMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
+
+		if (MatchEndWidgetClass)
+		{
+			MatchEndWidget = CreateWidget<UEPGameEndWidget>(this, MatchEndWidgetClass);
+			MatchEndWidget->AddToViewport();
+			MatchEndWidget->SetVisibility(ESlateVisibility::Collapsed);
+		} 
+
+		OnSetupEndMatch.AddUObject(this, &AEPPlayerController::SetupEndMatch);
 	}
 }
 
@@ -99,6 +115,7 @@ void AEPPlayerController::SetupInputComponent()
 		Input->BindAction(ShowingScoreBoard, ETriggerEvent::Started, this, &AEPPlayerController::ShowScoreBoard);
 		Input->BindAction(ShowingScoreBoard, ETriggerEvent::Completed, this, &AEPPlayerController::HideScoreBoard);
 		Input->BindAction(ShowingGameMenu, ETriggerEvent::Started, this, &AEPPlayerController::ShowGameMenu);
+
 	}
 }
 
@@ -112,23 +129,37 @@ void AEPPlayerController::ClientRPCUpdateScoreBoard_Implementation()
 
 void AEPPlayerController::ClientRPCSetupEndMatch_Implementation()
 {
+	OnSetupEndMatch.Broadcast();
+}
+
+void AEPPlayerController::SetupEndMatch()
+{
+
 	if (IsLocalController())
 	{
-		MatchEndWidget = CreateWidget<UUserWidget>(this, MatchEndWidgetClass);
-		if (MatchEndWidget)
-		{
-			MatchEndWidget->AddToViewport();
-		}
+		MatchEndWidget->SetVisibility(ESlateVisibility::Visible);
+		ShowScoreBoard();
 	}
-	DisableInput(this);
+	SetInputMode(FInputModeUIOnly());
+	bShowMouseCursor = true;
+	//DisableInput(this);
+	SetIgnoreMoveInput(true);
 	GetPawn()->DisableInput(this);
+}
+
+void AEPPlayerController::ClientRPCEndMatch_Implementation()
+{
+	if (IsLocalController())
+	{
+		MatchEndWidget->OnReturnToLobbyButtonClicked();
+	}
 }
 
 void AEPPlayerController::ShowScoreBoard()
 {
 	if (ScoreBoardWidget)
 	{
-		ScoreBoardWidget->AddToViewport();
+		ScoreBoardWidget->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
@@ -136,37 +167,29 @@ void AEPPlayerController::HideScoreBoard()
 {
 	if (ScoreBoardWidget)
 	{
-		ScoreBoardWidget->RemoveFromParent();
+		ScoreBoardWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
 void AEPPlayerController::ShowGameMenu()
 {	
-	//AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
-	//if (EPGameState->ScoreBoard.Num() == 0)
-	//{
-	//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ScoreBoard is Empty"));
-	//}
-	//for (auto& PlayerScoreStruct : EPGameState->ScoreBoard)
-	//{
-	//	AEPPlayerState* EPPlayerState = PlayerScoreStruct.PlayerState;
-	//	if (EPPlayerState)
-	//	{
-	//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Player: %s, Score: %d"), *EPPlayerState->GetPlayerName(), PlayerScoreStruct.Score));
-	//	}
-	//}
-
-
 	if (GameMenuWidget)
 	{
-		if(GameMenuWidget->IsInViewport())
-		{
-			GameMenuWidget->RemoveFromParent();
-		}
-		else
-		{
-			GameMenuWidget->AddToViewport();
-		}
+		GameMenuWidget->SetVisibility(ESlateVisibility::Visible);
+		GetPawn()->DisableInput(this);
+		SetInputMode(FInputModeUIOnly());
+		bShowMouseCursor = true;
+	}
+}
+
+void AEPPlayerController::HideGameMenu()
+{
+	if (GameMenuWidget)
+	{
+		GameMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
+		GetPawn()->EnableInput(this);
+		SetInputMode(FInputModeGameOnly());
+		bShowMouseCursor = false;
 	}
 }
 

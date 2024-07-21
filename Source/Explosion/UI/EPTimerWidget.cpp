@@ -16,40 +16,67 @@ void UEPTimerWidget::NativeConstruct()
 	if (LocalPlayer)
 	{
 		// 플레이어 컨트롤러에서 현재 서버 시간 가져오기
-		AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(LocalPlayer->PlayerController);
+		EPPlayerController = Cast<AEPPlayerController>(LocalPlayer->PlayerController);
 		if (EPPlayerController)
 		{
 			ServerTime = EPPlayerController->GetServerTime();
+			EPPlayerController->OnSetupEndMatch.AddUObject(this, &UEPTimerWidget::StopTimeDisplay);
 		}
 
 		//게임 스테이트에서 시간 제한을 가져온다.
-		AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
+		EPGameState = GetWorld()->GetGameState<AEPGameState>();
 		if (EPGameState)
 		{
 			LimitTime = EPGameState->GetMatchTimeLimit();
 		}
 	}
 	InitialTime = LimitTime - ServerTime;
-	UpdateTimeDisplay();
+
+	DisplayTimerDelegate.BindUObject(this, &UEPTimerWidget::UpdateTimeDisplay);
+
+	// 일단 튕기는거 확인용으로 넣어봄.
+	//StartTimeDisplay();
 }
 
-void UEPTimerWidget::StopTimer()
+void UEPTimerWidget::StartTimeDisplay()
 {
-	GetWorld()->GetTimerManager().ClearTimer(DisplayTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(DisplayTimerHandle, DisplayTimerDelegate, 1.0f, true, -1.0f);
+	//AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
+	//GetWorld()->GetTimerManager().SetTimer(DisplayTimerHandle, FTimerDelegate::CreateLambda([&]()
+	//	{
+	//		if (!GetWorld()->GetGameState<AEPGameState>()->GetIsSetupEndMatch())
+	//		{
+	//			Minutes = int(InitialTime) / 60;
+	//			Seconds = int(InitialTime) % 60;
+	//			Minutes = FMath::Clamp(Minutes, 0.0f, Minutes);
+	//			Seconds = FMath::Clamp(Seconds, 0.0f, Seconds);
+	//			TimeDisplay->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
+	//			InitialTime -= 1.0f;
+	//		}
+	//	}
+	//), 1.0f, true, -1.0f);
 }
 
 void UEPTimerWidget::UpdateTimeDisplay()
 {
-	AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
-	GetWorld()->GetTimerManager().SetTimer(DisplayTimerHandle, FTimerDelegate::CreateLambda([&]()
-		{
-			Minutes = int(InitialTime) / 60;
-			Seconds = int(InitialTime) % 60;
-			Minutes = FMath::Clamp(Minutes, 0.0f, Minutes);
-			Seconds = FMath::Clamp(Seconds, 0.0f, Seconds);
-			TimeDisplay->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
-			InitialTime -= 1.0f;
-		}
-	), 1.0f, true, -1.0f);
+	if (EPGameState->GetIsSetupEndMatch())
+	{
+		StopTimeDisplay();
+	}
+	else
+	{
+		Minutes = int(InitialTime) / 60;
+		Seconds = int(InitialTime) % 60;
+		Minutes = FMath::Clamp(Minutes, 0.0f, Minutes);
+		Seconds = FMath::Clamp(Seconds, 0.0f, Seconds);
+		TimeDisplay->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
+		InitialTime -= 1.0f;
+	}
+}
+
+
+void UEPTimerWidget::StopTimeDisplay()
+{
+	GetWorld()->GetTimerManager().ClearTimer(DisplayTimerHandle);
 }
 

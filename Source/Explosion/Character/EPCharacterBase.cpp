@@ -51,7 +51,6 @@ AEPCharacterBase::AEPCharacterBase()
 		OverHeadWidgetComponent->SetDrawSize(FVector2D(400.0f, 50.0f));
 		OverHeadWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-	
 
 	static ConstructorHelpers::FClassFinder<UUserWidget> HUDWidgetFinder
 	(TEXT("/Game/UI/WBP_HUDWidget.WBP_HUDWidget_C"));
@@ -119,28 +118,6 @@ void AEPCharacterBase::BeginPlay()
 void AEPCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//if (HasAuthority())
-	//{
-	//	if (IsLocallyControlled())
-	//	{
-	//		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Red, FString::Printf(TEXT("[Server]Server CurrentHp : %f"), StatComponent->GetCurrentHp()));
-	//	}
-	//	else
-	//	{
-	//		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Red, FString::Printf(TEXT("[Server]Client CurrentHp : %f"), StatComponent->GetCurrentHp()));
-	//	}
-	//}
-	//else
-	//{
-	//	if (IsLocallyControlled())
-	//	{
-	//		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Red, FString::Printf(TEXT("[Client]Server CurrentHp : %f"), StatComponent->GetCurrentHp()));
-	//	}
-	//	else
-	//	{
-	//		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Red, FString::Printf(TEXT("[Client]Client CurrentHp : %f"), StatComponent->GetCurrentHp()));
-	//	}
-	//}
 }
 
 void AEPCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

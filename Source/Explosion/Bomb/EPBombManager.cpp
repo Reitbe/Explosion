@@ -7,18 +7,16 @@
 UEPBombManager::UEPBombManager()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	
-	SetIsReplicated(true);
 
-	MaxBombCount = 4;
-	CurrentBombCount = 4;
 }
-
 
 // Called when the game starts
 void UEPBombManager::BeginPlay()
 {
-	Super::BeginPlay();	
+	Super::BeginPlay();
+	SetIsReplicated(true);
+	MaxBombCount = 4;
+	CurrentBombCount = 4;
 }
 
 

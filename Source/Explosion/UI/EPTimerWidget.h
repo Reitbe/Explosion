@@ -15,10 +15,12 @@ class EXPLOSION_API UEPTimerWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 	void SetInitialTime(int32 Time) { InitialTime = Time; }
-	void StopTimer();
+	void StartTimeDisplay();
+	void StopTimeDisplay();
 
 protected:
 	void UpdateTimeDisplay();
+	
 
 protected:
 	UPROPERTY(meta = (BindWidget))
@@ -26,6 +28,10 @@ protected:
 
 protected:
 	FTimerHandle DisplayTimerHandle;
+	FTimerDelegate DisplayTimerDelegate;
+
+	TObjectPtr<class AEPGameState> EPGameState;
+	TObjectPtr<class AEPPlayerController> EPPlayerController;
 
 	int32 Minutes;
 	int32 Seconds;

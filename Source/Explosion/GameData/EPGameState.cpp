@@ -16,7 +16,7 @@ void AEPGameState::PostInitializeComponents()
 	// 게임모드에 있어야할 종료 조건이지만 임시로 여기 두다.->타이머 UI를 위해
 	// 이거 게임모드에서 얻어와서 
 	MatchScoreLimit = 30;
-	MatchTimeLimit = 300.0f;
+	MatchTimeLimit = 5.0f;
 }
 
 double AEPGameState::GetServerWorldTimeSeconds() const

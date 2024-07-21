@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "EPPlayerController.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnSetupEndMatch)
 
 UCLASS()
 class EXPLOSION_API AEPPlayerController : public APlayerController
@@ -21,17 +22,26 @@ protected:
 
 // UI 표시
 public:
+	FOnSetupEndMatch OnSetupEndMatch;
+
 	UFUNCTION(Client, Reliable)
 	void ClientRPCSetupEndMatch();
+
+	void SetupEndMatch();
+
+	UFUNCTION(Client, Reliable)
+	void ClientRPCEndMatch();
 
 	UFUNCTION(Client, Reliable)
 	void ClientRPCUpdateScoreBoard();
 
+	void HideGameMenu();
 
 protected:
 	void ShowScoreBoard();
 	void HideScoreBoard();
 	void ShowGameMenu();
+	
 
 // 서버 시간 동기화
 public:
@@ -45,7 +55,6 @@ protected:
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerRequestServerTime(APlayerController* requestor, float requestWorldTime);
-	
 
 // 입력 
 public:
@@ -74,9 +83,11 @@ protected:
 	TSubclassOf<class UEPGameMenuWidget> GameMenuWidgetClass;
 
 	UPROPERTY()
-	TObjectPtr<class UUserWidget> MatchEndWidget;
+	TObjectPtr<class UEPGameEndWidget> MatchEndWidget;
+
 	UPROPERTY()
 	TObjectPtr<class UEPScoreBoardWidget> ScoreBoardWidget;
+
 	UPROPERTY()
 	TObjectPtr<class UEPGameMenuWidget> GameMenuWidget;
 

@@ -38,6 +38,7 @@ protected:
 	virtual void SetDead() override;
 	void ResetPlayer();
 
+
 // Input Section
 protected:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input")
@@ -126,6 +127,8 @@ protected:
 	UFUNCTION()
 	void OnRep_Throwing();
 
+	float ChargingDuration;
+
 	//UFUNCTION()
 	//void DrawThrowingPath();
 
@@ -145,11 +148,18 @@ protected:
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	float ThrowingVelocityMultiplier;
 
+	float ThrowingVelocityMultiplierDefault;
+	float ThrowingVelocityMultiplierMax;
+
 	UPROPERTY(ReplicatedUsing = OnRep_Aiming, EditAnyWhere, Category = "Bomb")
 	uint8 bIsAiming : 1;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Throwing, EditAnyWhere, Category = "Bomb")
 	uint8 bIsThrowing : 1;
+
+// UI Section
+	TSubclassOf<class UEPChargingBarWidget> ChargingBarWidgetClass;
+	TObjectPtr<class UEPChargingBarWidget> ChargingBarWidget;
 
 // Respawn Section
 protected:
