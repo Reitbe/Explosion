@@ -85,8 +85,9 @@ void AEPPlayerController::BeginPlay()
 		if (ScoreBoardWidgetClass)
 		{
 			ScoreBoardWidget = CreateWidget<UEPScoreBoardWidget>(this, ScoreBoardWidgetClass);
-			ScoreBoardWidget->AddToViewport();
-			ScoreBoardWidget->SetVisibility(ESlateVisibility::Collapsed);
+			ScoreBoardWidget->AddToViewport(30);
+			//ScoreBoardWidget->SetVisibility(ESlateVisibility::Collapsed);
+			ScoreBoardWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 
 		if (GameMenuWidgetClass)
@@ -99,7 +100,7 @@ void AEPPlayerController::BeginPlay()
 		if (MatchEndWidgetClass)
 		{
 			MatchEndWidget = CreateWidget<UEPGameEndWidget>(this, MatchEndWidgetClass);
-			MatchEndWidget->AddToViewport();
+			MatchEndWidget->AddToViewport(20);
 			MatchEndWidget->SetVisibility(ESlateVisibility::Collapsed);
 		} 
 
@@ -167,7 +168,7 @@ void AEPPlayerController::HideScoreBoard()
 {
 	if (ScoreBoardWidget)
 	{
-		ScoreBoardWidget->SetVisibility(ESlateVisibility::Collapsed);
+		ScoreBoardWidget->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 

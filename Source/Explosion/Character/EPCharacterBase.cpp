@@ -103,7 +103,7 @@ void AEPCharacterBase::BeginPlay()
 		HUDWidget = CreateWidget<UEPHUDWidget>(GetWorld(), HUDWidgetClass);
 		if (HUDWidget)
 		{
-			HUDWidget->AddToViewport();
+			HUDWidget->AddToViewport(10);
 			HUDWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
 			StatComponent->OnHpChanged.AddUObject(HUDWidget, &UEPHUDWidget::UpdateHpBar);
 		}

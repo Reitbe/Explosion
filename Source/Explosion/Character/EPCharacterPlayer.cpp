@@ -391,7 +391,7 @@ void AEPCharacterPlayer::OnRep_Aiming()
 			if (IsLocallyControlled() && ChargingBarWidget)
 			{
 				ChargingBarWidget->EndChargingBar();
-				ChargingBarWidget->SetVisibility(ESlateVisibility::Visible);
+				ChargingBarWidget->SetVisibility(ESlateVisibility::Collapsed);
 			}
 			if (HasAuthority())
 			{
