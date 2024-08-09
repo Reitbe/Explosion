@@ -2,6 +2,7 @@
 
 
 #include "EPGameInstance.h"
+#include "GameFramework/GameUserSettings.h"
 
 UEPGameInstance::UEPGameInstance()
 {
@@ -19,6 +20,14 @@ void UEPGameInstance::Init()
 	if(CharacterStatTable)
 	{
 		DefaultStat = *CharacterStatTable->FindRow<FEPCharacterStat>(FName(TEXT("DefaultHp")), TEXT("Find Error"));
+	}
+
+	UGameUserSettings* GameUserSettings = UGameUserSettings::GetGameUserSettings();
+	if (GameUserSettings)
+	{
+		GameUserSettings->SetOverallScalabilityLevel(1);
+		GameUserSettings->SetFullscreenMode(EWindowMode::Windowed);
+		GameUserSettings->ApplySettings(false);
 	}
 	
 }

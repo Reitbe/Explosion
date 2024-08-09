@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "OnlineSessionSettings.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "EPSessionBlockWidget.generated.h"
 
 /**
@@ -18,7 +19,7 @@ class EXPLOSION_API UEPSessionBlockWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 	void SetSessionFindResult(const FOnlineSessionSearchResult& SessionResult);
-	void SetSessionText(const FString& ServerName, const FString& AmountOfPlayers, const FString& Ping);
+	void SetSessionText(const FString& OwingUserName, const FString& AmountOfPlayers, const FString& Ping);
 
 public:
 	UPROPERTY(meta = (BindWidget))
@@ -28,7 +29,12 @@ protected:
 	UFUNCTION()
 	void OnJoinSessionButtonClicked();
 
+	void OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result);
+
 protected:
+	class UEPMultiplayerSessionSubsystem* MultiplayerSessionSubsystem;
+	FOnlineSessionSearchResult SessionFindResult;
+
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UTextBlock> ServerNameTextBlock;
 
@@ -38,7 +44,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UTextBlock> PingTextBlock;
 	
-	FOnlineSessionSearchResult SessionFindResult;
 
 
 };

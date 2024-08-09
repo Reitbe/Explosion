@@ -18,3 +18,11 @@ void UEPHUDWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)
 		HpBarWidget->UpdateHpBar(NewCurrentHp, NewMaxHp);
 	}
 }
+
+void UEPHUDWidget::StartTimer()
+{
+	if (TimerWidget)
+	{
+		TimerWidget->StartTimeDisplay();
+	}
+}

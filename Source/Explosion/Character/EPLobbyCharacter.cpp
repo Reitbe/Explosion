@@ -14,7 +14,8 @@ AEPLobbyCharacter::AEPLobbyCharacter()
 void AEPLobbyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	// 플레이어 컨트롤러를 얻는다.
+	
+	// 캐릭터 입력 비활성화
 	APlayerController* LBPlayerController = Cast<AEPLobbyPlayerController>(GetController());
 	DisableInput(LBPlayerController);
 }

@@ -62,6 +62,17 @@ protected:
 	virtual void OnThrowingBomb();
 	virtual void OnReloadingBomb();
 
+// Timer
+public:
+	UFUNCTION()
+	void StartMainGame();
+
+
+protected: 
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_PlayerReady();
+
+
 // UI
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", Meta = (AllowPrivateAccess = "true"))

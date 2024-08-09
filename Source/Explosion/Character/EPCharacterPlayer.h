@@ -26,6 +26,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(client, reliable)
+	void ClientRPC_ShakeCamera();
+
 // PlayerController Section
 protected:
 	TObjectPtr<APlayerController> PlayerController;
@@ -97,6 +100,8 @@ protected:
 	UPROPERTY(EditAnyWhere, Category = "Camera")
 	TObjectPtr<class UCurveFloat> CameraZoomCurve;
 
+	TSubclassOf<class UCameraShakeBase> CameraShakeClass;
+
 	FOnTimelineFloat CameraZoomHandler;
 	float DefaultSpringArmLength;
 	float ZoomedSpringArmLength;
@@ -134,6 +139,9 @@ protected:
 
 // Bomb Section
 protected:
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+protected:
 	FTimerHandle ChargingRateTimerHandle;
 
 	UPROPERTY(VisibleAnyWhere, Category = "Bomb")
@@ -165,4 +173,5 @@ protected:
 protected:
 	UPROPERTY(EditAnyWhere, Category = "Respawn")
 	float RespawnTime;
+
 };

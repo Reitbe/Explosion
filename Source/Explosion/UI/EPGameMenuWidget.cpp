@@ -21,7 +21,7 @@ void UEPGameMenuWidget::NativeConstruct()
 		ReturnToLobbyButton->OnClicked.AddDynamic(this, &UEPGameMenuWidget::OnReturnToLobbyButtonClicked);
 	}
 
-	LevelPath = "/Game/Map/TestMap.TestMap";
+	LevelPath = "/Game/Map/LobbyMap.LobbyMap";
 }
 
 

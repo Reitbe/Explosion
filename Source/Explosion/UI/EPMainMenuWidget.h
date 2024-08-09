@@ -21,8 +21,8 @@ public:
 	UFUNCTION()
 	void OnPlayGameButtonClicked();
 
-	UFUNCTION()
-	void OnSettingsButtonClicked();
+	//UFUNCTION()
+	//void OnSettingsButtonClicked();
 
 	UFUNCTION()
 	void OnExitGameButtonClicked();
@@ -31,8 +31,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UButton> PlayGameButton;
 
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<class UButton> SettingsButton;
+	//UPROPERTY(meta = (BindWidget))
+	//TObjectPtr<class UButton> SettingsButton;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UButton> ExitGameButton;

@@ -23,6 +23,7 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
+#include "LegacyCameraShake.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
 #include "Explosion/Explosion.h"
@@ -119,11 +120,19 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	}
 
 	// 에셋 로드 - UI
-	static ConstructorHelpers::FClassFinder<UUserWidget> ChargingBarWidgetFinder
+	static ConstructorHelpers::FClassFinder<UEPChargingBarWidget> ChargingBarWidgetFinder
 	(TEXT("/Game/UI/WBP_ChargingBarWidget.WBP_ChargingBarWidget_C"));
 	if (ChargingBarWidgetFinder.Class)
 	{
 		ChargingBarWidgetClass = ChargingBarWidgetFinder.Class;
+	}
+
+	// 에셋 로드 - 카메라 쉐이크
+	static ConstructorHelpers::FClassFinder<UCameraShakeBase> CameraShakeClassFinder
+	(TEXT("/Game/Animation/CameraShake/BP_Bomb_CS.BP_Bomb_CS_C"));
+	if (CameraShakeClassFinder.Class)
+	{
+		CameraShakeClass = CameraShakeClassFinder.Class;
 	}
 
 	// 카메라 설정
@@ -149,6 +158,23 @@ void AEPCharacterPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 첫 시작 위치 설정
+	AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("트랜스폼 가져오기 실행"));
+		FTransform NewTransform = GameMode->GetRandomStartTransform();
+		TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator());
+		if (TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator()))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 성공"));
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 실패"));
+		}
+	}
+
 	// 입력 컨텍스트 지정
 	PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController != nullptr)
@@ -165,9 +191,10 @@ void AEPCharacterPlayer::BeginPlay()
 
 	AnimInstance = GetMesh()->GetAnimInstance();
 
-	// 들고 있을 폭탄 스폰 및 소켓에 부착
+
 	if (HasAuthority())
 	{
+		// 들고 있을 폭탄 스폰 및 소켓에 부착
 		BombInHand = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FTransform::Identity);
 		if (BombInHand)
 		{
@@ -207,6 +234,14 @@ void AEPCharacterPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(AEPCharacterPlayer, bIsAiming);
 	DOREPLIFETIME(AEPCharacterPlayer, bIsThrowing);
 }
+
+float AEPCharacterPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	ClientRPC_ShakeCamera();
+	return 0.0f;
+}
+
 
 void AEPCharacterPlayer::SetDead()
 {
@@ -255,7 +290,6 @@ void AEPCharacterPlayer::ResetPlayer()
 			TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator());
 		}
 	}
-
 }
 
 
@@ -291,6 +325,15 @@ void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		Input->BindAction(AimingBomb, ETriggerEvent::Started, this, &AEPCharacterPlayer::AimingOn);
 		Input->BindAction(AimingBomb, ETriggerEvent::Completed, this, &AEPCharacterPlayer::AimingOff);
 		Input->BindAction(ThrowingBomb, ETriggerEvent::Started, this, &AEPCharacterPlayer::Throwing);
+	}
+}
+
+void AEPCharacterPlayer::ClientRPC_ShakeCamera_Implementation()
+{
+	if (CameraShakeClass)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("카메라 쉐이크 실행"));
+		PlayerController->ClientStartCameraShake(CameraShakeClass, 1.0f);
 	}
 }
 
@@ -458,7 +501,6 @@ void AEPCharacterPlayer::OnRep_Throwing()
 		}
 	}
 }
-
 
 void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMontage, bool IsProperlyEnded)
 {

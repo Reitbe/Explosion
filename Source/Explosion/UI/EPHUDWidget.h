@@ -15,6 +15,7 @@ class EXPLOSION_API UEPHUDWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 	void UpdateHpBar(float NewCurrentHp, float NewMaxHp);
+	void StartTimer();
 
 public:
 	UPROPERTY(meta = (BindWidget))

@@ -12,6 +12,13 @@ void UEPSessionBlockWidget::NativeConstruct()
 	{
 		JoinSessionButton->OnClicked.AddDynamic(this, &UEPSessionBlockWidget::OnJoinSessionButtonClicked);
 	}
+
+	MultiplayerSessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
+	if(MultiplayerSessionSubsystem)
+	{
+		MultiplayerSessionSubsystem->MultiplayerOnJoinSessionComplete.AddUObject(this, &UEPSessionBlockWidget::OnJoinSessionComplete);
+	}
+
 }
 
 void UEPSessionBlockWidget::SetSessionFindResult(const FOnlineSessionSearchResult& SessionResult)
@@ -21,18 +28,19 @@ void UEPSessionBlockWidget::SetSessionFindResult(const FOnlineSessionSearchResul
 	int32 ConnectionCount = SessionResult.Session.NumOpenPublicConnections;
 	int32 MaxConnectionCount = SessionResult.Session.SessionSettings.NumPublicConnections;
 	
-	FString SessionName = SessionResult.Session.GetSessionIdStr();
+	//FString SessionName = SessionResult.Session.GetSessionIdStr();
+	FString OwingUserName = SessionResult.Session.OwningUserName;
 	FString PlayerCount = FString::Printf(TEXT("%02d/%02d"), ConnectionCount, MaxConnectionCount);
 	FString Ping = FString::Printf(TEXT("%d"), SessionResult.PingInMs);
 
-	SetSessionText(SessionName, PlayerCount, Ping);
+	SetSessionText(OwingUserName, PlayerCount, Ping);
 }
 
-void UEPSessionBlockWidget::SetSessionText(const FString& ServerName, const FString& AmountOfPlayers, const FString& Ping)
+void UEPSessionBlockWidget::SetSessionText(const FString& OwingUserName, const FString& AmountOfPlayers, const FString& Ping)
 {
 	if (ServerNameTextBlock)
 	{
-		ServerNameTextBlock->SetText(FText::FromString(ServerName));
+		ServerNameTextBlock->SetText(FText::FromString(OwingUserName));
 	}
 
 	if (AmountOfPlayersTextBlock)
@@ -48,9 +56,25 @@ void UEPSessionBlockWidget::SetSessionText(const FString& ServerName, const FStr
 
 void UEPSessionBlockWidget::OnJoinSessionButtonClicked()
 {
-	UEPMultiplayerSessionSubsystem* SessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
-	if (SessionSubsystem)
+	if (MultiplayerSessionSubsystem)
 	{
-		SessionSubsystem->JoinSession(SessionFindResult);
+		MultiplayerSessionSubsystem->JoinSession(SessionFindResult);
+	}
+}
+
+void UEPSessionBlockWidget::OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result)
+{
+	IOnlineSessionPtr SessionInterface = *MultiplayerSessionSubsystem->GetSessionInterface();
+	if (SessionInterface.IsValid())
+	{
+		FString Address;
+		SessionInterface->GetResolvedConnectString(NAME_GameSession, Address);
+
+		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+		if (PlayerController)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("조인세션 했고 트래블 간다!! : %s"), *Address));
+			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+		}
 	}
 }

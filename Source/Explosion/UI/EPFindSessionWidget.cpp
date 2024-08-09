@@ -31,10 +31,10 @@ void UEPFindSessionWidget::NativeConstruct()
 		LANCheckBox->OnCheckStateChanged.AddDynamic(this, &UEPFindSessionWidget::OnLANCheckBoxStateChanged);
 	}
 
-	UEPMultiplayerSessionSubsystem* SessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
-	if (SessionSubsystem)
+	MultiplayerSessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
+	if (MultiplayerSessionSubsystem)
 	{
-		SessionSubsystem->MultiplayerOnFindSessionComplete.AddUObject(this, &UEPFindSessionWidget::OnFindSessionComplete);
+		MultiplayerSessionSubsystem->MultiplayerOnFindSessionComplete.AddUObject(this, &UEPFindSessionWidget::OnFindSessionComplete);
 	}
 
 	MaxSearchResults = 10;
@@ -44,6 +44,7 @@ void UEPFindSessionWidget::OnFindSessionButtonClicked()
 {
 	if (SessionListScrollBox)
 	{
+		// 기존 세션 정보 블럭들 전부 제거
 		SessionListScrollBox->ClearChildren();
 	}
 
@@ -52,11 +53,10 @@ void UEPFindSessionWidget::OnFindSessionButtonClicked()
 		FindSessionButton->SetIsEnabled(false);
 	}
 
-	UEPMultiplayerSessionSubsystem* SessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
-	if (SessionSubsystem)
+	if (MultiplayerSessionSubsystem)
 	{
-		//SessionSubsystem->MultiplayerOnFindSessionComplete.AddUObject(this, &UEPFindSessionWidget::OnFindSessionComplete);
-		SessionSubsystem->FindSession(MaxSearchResults, bUseLAN);
+		MultiplayerSessionSubsystem->SetLANMatch(bUseLAN);
+		MultiplayerSessionSubsystem->FindSession(MaxSearchResults);
 	}
 }
 
@@ -72,11 +72,17 @@ void UEPFindSessionWidget::OnFindSessionComplete(const TArray<FOnlineSessionSear
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("세션 찾았다!!!"));
 		for(const FOnlineSessionSearchResult& SessionResult : SessionResults)
 		{
-			UEPSessionBlockWidget* SessionBlockWidget = CreateWidget<UEPSessionBlockWidget>(GetWorld(), SessionBlockWidgetClass);
-			if (SessionBlockWidget)
+			FString SettingValue;
+			SessionResult.Session.SessionSettings.Get(FName("MatchType"), SettingValue);
+			if (SettingValue == TypeOfMatch)
 			{
-				SessionBlockWidget->SetSessionFindResult(SessionResult);
-				SessionListScrollBox->AddChild(SessionBlockWidget);
+				// 세션정보를 담은 세션 블록 UI추가
+				UEPSessionBlockWidget* SessionBlockWidget = CreateWidget<UEPSessionBlockWidget>(GetWorld(), SessionBlockWidgetClass);
+				if (SessionBlockWidget)
+				{
+					SessionBlockWidget->SetSessionFindResult(SessionResult);
+					SessionListScrollBox->AddChild(SessionBlockWidget);
+				}
 			}
 		}
 	}

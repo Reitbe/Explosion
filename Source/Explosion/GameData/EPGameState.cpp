@@ -16,7 +16,7 @@ void AEPGameState::PostInitializeComponents()
 	// 게임모드에 있어야할 종료 조건이지만 임시로 여기 두다.->타이머 UI를 위해
 	// 이거 게임모드에서 얻어와서 
 	MatchScoreLimit = 30;
-	MatchTimeLimit = 60.0f;
+	MatchTimeLimit = 120.0f;
 }
 
 double AEPGameState::GetServerWorldTimeSeconds() const
@@ -33,33 +33,22 @@ double AEPGameState::GetServerWorldTimeSeconds() const
 	return 0.0;
 }
 
-//void AEPGameState::UpdateScoreBoard()
-//{
-//	for (auto& Player : PlayerArray)
-//	{
-//		AEPPlayerState* EPPlayerState = Cast<AEPPlayerState>(Player);
-//		if (EPPlayerState)
-//		{
-//			int32 KillCount = EPPlayerState->GetKillCount();
-//			
-//
-//			if (ScoreBoard.Contains(EPPlayerState))
-//			{
-//				ScoreBoard[EPPlayerState] = KillCount * KillScoreMultiplier;
-//			}
-//			else
-//			{
-//				ScoreBoard.Add(EPPlayerState, KillCount * KillScoreMultiplier);
-//			}
-//		}
-//	}
-//}
-
 void AEPGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AEPGameState, ScoreBoard);
 	DOREPLIFETIME(AEPGameState, bIsSetupEndMatch);
+	DOREPLIFETIME(AEPGameState, MatchTimeLimit);
+}
+
+void AEPGameState::OnRep_PostUpdateScoreBoard()
+{
+	SetIsScoreBoardReplicated(true);
+
+	AEPPlayerController* PlayerController = Cast<AEPPlayerController>(GetWorld()->GetFirstPlayerController());
+	//PlayerController->ClientRPCUpdateScoreBoard();
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ScoreBoard Updated"));
+	PlayerController->UpdateScoreBoard();
 }
 
 

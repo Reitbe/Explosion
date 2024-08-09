@@ -7,10 +7,6 @@
 void UEPNameTagWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	//if (TxtNameTag)
-	//{
-	//	TxtNameTag->SetText(FText::FromString("TestName"));
-	//}
 }
 
 void UEPNameTagWidget::SetNameTag(FString Name)

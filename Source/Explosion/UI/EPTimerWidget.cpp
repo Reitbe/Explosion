@@ -34,43 +34,27 @@ void UEPTimerWidget::NativeConstruct()
 
 	DisplayTimerDelegate.BindUObject(this, &UEPTimerWidget::UpdateTimeDisplay);
 
-	// 일단 튕기는거 확인용으로 넣어봄.
-	//StartTimeDisplay();
 }
 
 void UEPTimerWidget::StartTimeDisplay()
 {
+	UpdateTimeDisplay(); // 최초 시간 출력
+
 	GetWorld()->GetTimerManager().SetTimer(DisplayTimerHandle, DisplayTimerDelegate, 1.0f, true, -1.0f);
-	//AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
-	//GetWorld()->GetTimerManager().SetTimer(DisplayTimerHandle, FTimerDelegate::CreateLambda([&]()
-	//	{
-	//		if (!GetWorld()->GetGameState<AEPGameState>()->GetIsSetupEndMatch())
-	//		{
-	//			Minutes = int(InitialTime) / 60;
-	//			Seconds = int(InitialTime) % 60;
-	//			Minutes = FMath::Clamp(Minutes, 0.0f, Minutes);
-	//			Seconds = FMath::Clamp(Seconds, 0.0f, Seconds);
-	//			TimeDisplay->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
-	//			InitialTime -= 1.0f;
-	//		}
-	//	}
-	//), 1.0f, true, -1.0f);
 }
 
 void UEPTimerWidget::UpdateTimeDisplay()
 {
-	if (EPGameState->GetIsSetupEndMatch())
+	InitialTime -= 1.0f;
+	Minutes = int(InitialTime) / 60;
+	Seconds = int(InitialTime) % 60;
+	Minutes = FMath::Clamp(Minutes, 0.0f, Minutes);
+	Seconds = FMath::Clamp(Seconds, 0.0f, Seconds);
+	TimeDisplay->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
+
+	if (EPGameState->GetIsSetupEndMatch() || InitialTime <= 0)
 	{
 		StopTimeDisplay();
-	}
-	else
-	{
-		Minutes = int(InitialTime) / 60;
-		Seconds = int(InitialTime) % 60;
-		Minutes = FMath::Clamp(Minutes, 0.0f, Minutes);
-		Seconds = FMath::Clamp(Seconds, 0.0f, Seconds);
-		TimeDisplay->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
-		InitialTime -= 1.0f;
 	}
 }
 

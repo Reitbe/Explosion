@@ -11,6 +11,7 @@
 #include "Explosion/UI/EPGameMenuWidget.h"
 #include "Explosion/UI/EPScoreBoardWidget.h"
 #include "Explosion/UI/EPGameEndWidget.h"
+#include "Explosion/UI/EPBasicTextWidget.h"
 #include "Explosion/GameData/EPGameState.h"
 #include "Explosion/GameData/EPPlayerState.h"
 #include "Components/Button.h"
@@ -64,6 +65,13 @@ AEPPlayerController::AEPPlayerController()
 		ScoreBoardWidgetClass = ScoreBoardWidgetClassFinder.Class;
 	}
 
+	static ConstructorHelpers::FClassFinder<UEPBasicTextWidget> StartMainGameWidgetClassFinder
+	(TEXT("/Game/UI/WBP_MainGameStartWidget.WBP_MainGameStartWidget_C"));
+	if (StartMainGameWidgetClassFinder.Class)
+	{
+		StartMainGameWidgetClass = StartMainGameWidgetClassFinder.Class;
+	}
+
 	ServerTime = 0.0f;
 }
 
@@ -85,8 +93,7 @@ void AEPPlayerController::BeginPlay()
 		if (ScoreBoardWidgetClass)
 		{
 			ScoreBoardWidget = CreateWidget<UEPScoreBoardWidget>(this, ScoreBoardWidgetClass);
-			ScoreBoardWidget->AddToViewport(30);
-			//ScoreBoardWidget->SetVisibility(ESlateVisibility::Collapsed);
+			ScoreBoardWidget->AddToViewport(20);
 			ScoreBoardWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 
@@ -100,12 +107,48 @@ void AEPPlayerController::BeginPlay()
 		if (MatchEndWidgetClass)
 		{
 			MatchEndWidget = CreateWidget<UEPGameEndWidget>(this, MatchEndWidgetClass);
-			MatchEndWidget->AddToViewport(20);
+			MatchEndWidget->AddToViewport(30);
 			MatchEndWidget->SetVisibility(ESlateVisibility::Collapsed);
 		} 
 
+		if (StartMainGameWidgetClass)
+		{
+			StartMainGameWidget = CreateWidget<UEPBasicTextWidget>(this, StartMainGameWidgetClass);
+			StartMainGameWidget->AddToViewport();
+			StartMainGameWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		// 클라이언트인 경우에만 등록되는 대리자들
+		OnStartMainGame.AddUObject(this, &AEPPlayerController::StartMainGame);
 		OnSetupEndMatch.AddUObject(this, &AEPPlayerController::SetupEndMatch);
+
+		ConsoleCommand(TEXT("stat fps"), true);
 	}
+
+	//EnableInput(this);
+	DisableInput(this);
+	SetInputMode(FInputModeGameOnly());
+}
+
+void AEPPlayerController::StartMainGame()
+{
+	// 스코어보드 위젯 업데이트
+	bIsStartMainGame = true;
+	UpdateScoreBoard();
+
+	// 움직임 종료 해제
+	EnableInput(this);
+
+	// 시작 UI 출력 및 숨기기
+	StartMainGameWidget->SetText(FText::FromString(TEXT("START!!!")));
+	StartMainGameWidget->SetTextColorAndOpacity(FLinearColor::Red);
+	
+	FTimerHandle StartMainGameWidgetTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(StartMainGameWidgetTimerHandle, FTimerDelegate::CreateLambda([&]()
+		{
+			StartMainGameWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	), 1.0f, false);
 }
 
 void AEPPlayerController::SetupInputComponent()
@@ -120,11 +163,37 @@ void AEPPlayerController::SetupInputComponent()
 	}
 }
 
-void AEPPlayerController::ClientRPCUpdateScoreBoard_Implementation()
+//void AEPPlayerController::ClientRPCUpdateScoreBoard_Implementation()
+void AEPPlayerController::UpdateScoreBoard()
 {
-	if (IsLocalController() && ScoreBoardWidget)
+	if (IsLocalController() && ScoreBoardWidget && bIsStartMainGame)
 	{
-		ScoreBoardWidget->UpdateScoreBoard();
+		bool bIsScoreBoardUpdated = false;
+		bool bIsKillCountUpdated = false;
+		bool bIsDeathCountUpdated = false;
+
+		//AEPGameState* EPGameState = GetWorld()->GetGameState<AEPGameState>();
+		//if (EPGameState)
+		//{
+		//	bIsScoreBoardUpdated = EPGameState->GetIsScoreBoardReplicated();
+		//}
+
+		//AEPPlayerState* EPPlayerState = GetPlayerState<AEPPlayerState>();
+		//if (EPPlayerState)
+		//{
+		//	bIsKillCountUpdated = EPPlayerState->GetIsKillCountReplicated();
+		//	bIsDeathCountUpdated = EPPlayerState->GetIsDeathCountReplicated();
+		//}
+
+		if (true || (bIsScoreBoardUpdated && bIsKillCountUpdated && bIsDeathCountUpdated))
+		{
+			//EPGameState->SetIsScoreBoardReplicated(false);
+			//EPPlayerState->SetIsKillCountReplicated(false);
+			//EPPlayerState->SetIsDeathCountReplicated(false);
+
+			ScoreBoardWidget->UpdateScoreBoard();
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("ClientRPCUpdateScoreBoard_Implementation"));
+		}
 	}
 }
 
@@ -133,12 +202,18 @@ void AEPPlayerController::ClientRPCSetupEndMatch_Implementation()
 	OnSetupEndMatch.Broadcast();
 }
 
+void AEPPlayerController::ClientRPC_StartMainGame_Implementation()
+{
+	OnStartMainGame.Broadcast();
+}
+
 void AEPPlayerController::SetupEndMatch()
 {
 
 	if (IsLocalController())
 	{
 		MatchEndWidget->SetVisibility(ESlateVisibility::Visible);
+		ScoreBoardWidget->TurnOnGrayBackBoard();
 		ShowScoreBoard();
 	}
 	SetInputMode(FInputModeUIOnly());

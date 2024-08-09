@@ -8,7 +8,9 @@
 #include "Explosion/Bomb/EPBombManager.h"
 #include "Explosion/Stat/EPCharacterStatComponent.h"
 #include "Explosion/GameData/EPDeathMatchGameMode.h"
+#include "Explosion/Player/EPPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Explosion/Explosion.h"
 // EP_LOG(LogExplosion, Log, TEXT("%s"), TEXT("전체 다 몽타주를 재생"));
 
@@ -89,7 +91,8 @@ void AEPCharacterBase::BeginPlay()
 		OverHeadWidget->UpdateNameTag(this); // 임시로 이름 설정
 		if (IsLocallyControlled()) 
 		{
-			OverHeadWidget->SetHpBarVisible(false);
+			OverHeadWidget->SetVisibility(ESlateVisibility::Collapsed);
+			//OverHeadWidget->SetHpBarVisible(false);
 		}
 		else
 		{
@@ -109,6 +112,18 @@ void AEPCharacterBase::BeginPlay()
 		}
 	}
 
+	// 모든 준비가 완료되었음을 서버에 알림
+	if (IsLocallyControlled())
+	{
+		AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetController());
+		if (EPPlayerController)
+		{
+			EPPlayerController->OnStartMainGame.AddUObject(this, &AEPCharacterBase::StartMainGame);
+		}
+		ServerRPC_PlayerReady();
+	}
+
+	DisableInput(GetWorld()->GetFirstPlayerController());
 	// Delegate 설정
 	//StatComponent->OnHpZero.AddUObject(this, &AEPCharacterBase::SetDead);
 	StatComponent->OnHpChanged.AddUObject(this, &AEPCharacterBase::TempSetDamaged);
@@ -160,6 +175,29 @@ void AEPCharacterBase::OnThrowingBomb()
 
 void AEPCharacterBase::OnReloadingBomb()
 {
+}
+
+void AEPCharacterBase::StartMainGame()
+{
+	// 입력 활성화
+	EnableInput(GetWorld()->GetFirstPlayerController());
+
+	// 타이머 위젯 시작
+	if (HUDWidget)
+	{
+		HUDWidget->StartTimer();
+	}
+}
+
+void AEPCharacterBase::ServerRPC_PlayerReady_Implementation()
+{
+	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
+	AEPDeathMatchGameMode* EPGameMode = Cast<AEPDeathMatchGameMode>(GameMode);
+	if (EPGameMode)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("캐릭터고 서버에 준비 신호 보낸다.")));
+		EPGameMode->CheckAllPlayersReady();
+	}
 }
 
 

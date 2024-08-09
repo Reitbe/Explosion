@@ -7,6 +7,7 @@
 #include "EPPlayerController.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnSetupEndMatch)
+DECLARE_MULTICAST_DELEGATE(FOnStartMainGame)
 
 UCLASS()
 class EXPLOSION_API AEPPlayerController : public APlayerController
@@ -20,9 +21,17 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+protected:
+	UFUNCTION()
+	void StartMainGame();
+
 // UI 표시
 public:
 	FOnSetupEndMatch OnSetupEndMatch;
+	FOnStartMainGame OnStartMainGame;
+
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_StartMainGame();
 
 	UFUNCTION(Client, Reliable)
 	void ClientRPCSetupEndMatch();
@@ -32,8 +41,10 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientRPCEndMatch();
 
-	UFUNCTION(Client, Reliable)
-	void ClientRPCUpdateScoreBoard();
+	//UFUNCTION(Client, Reliable)
+	//void ClientRPCUpdateScoreBoard();
+
+	void UpdateScoreBoard();
 
 	void HideGameMenu();
 
@@ -82,6 +93,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UEPGameMenuWidget> GameMenuWidgetClass;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<class UEPBasicTextWidget> StartMainGameWidgetClass;
+
 	UPROPERTY()
 	TObjectPtr<class UEPGameEndWidget> MatchEndWidget;
 
@@ -91,6 +105,13 @@ protected:
 	UPROPERTY()
 	TObjectPtr<class UEPGameMenuWidget> GameMenuWidget;
 
+	UPROPERTY()
+	TObjectPtr<class UEPBasicTextWidget> StartMainGameWidget;
+
 protected:
 	float ServerTime;
+
+
+private:
+	uint8 bIsStartMainGame : 1;
 };

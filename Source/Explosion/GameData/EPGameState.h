@@ -17,7 +17,7 @@ public:
 	TObjectPtr<class AEPPlayerState> PlayerState;
 
 	UPROPERTY()
-	int32 Score;
+	int32 Score = 0;
 
 	bool operator==(const FScoreBoard& Other) const
 	{
@@ -38,11 +38,17 @@ public:
 	float GetMatchTimeLimit() const { return MatchTimeLimit; }
 	int32 GetMatchScoreLimit() const { return MatchScoreLimit; }
 
+	void SetIsScoreBoardReplicated(bool bIsReplicated) { bIsScoreBoardReplicated = bIsReplicated; }
+	bool GetIsScoreBoardReplicated() const { return bIsScoreBoardReplicated; }
+
+	UFUNCTION()
+	void OnRep_PostUpdateScoreBoard();
+
 public:
 	//UPROPERTY(Replicated)
 	//TMap<TObjectPtr<APlayerState>, int32> ScoreBoard;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_PostUpdateScoreBoard)
 	TArray<FScoreBoard> ScoreBoard;
 
 	void UpdateScoreBoard(TObjectPtr<class AEPPlayerState> KillerGameState);
@@ -59,6 +65,11 @@ protected:
 	uint8 bIsSetupEndMatch : 1;
 
 	int32 MatchScoreLimit;
+	
+	UPROPERTY(Replicated)
 	float MatchTimeLimit;
+
+private:
+	uint8 bIsScoreBoardReplicated : 1;
 
 };

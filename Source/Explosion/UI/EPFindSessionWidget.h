@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "EPFindSessionWidget.generated.h"
 
 
@@ -27,6 +28,8 @@ public:
 	void OnFindSessionComplete(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
 
 protected:
+	class UEPMultiplayerSessionSubsystem* MultiplayerSessionSubsystem;
+
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UButton> FindSessionButton;
 
@@ -40,4 +43,5 @@ protected:
 	
 	uint8 bUseLAN : 1;
 	int32 MaxSearchResults;
+	FString TypeOfMatch = FString(TEXT("FreeForAll"));
 };

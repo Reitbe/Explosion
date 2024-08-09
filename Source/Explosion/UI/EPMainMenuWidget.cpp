@@ -19,10 +19,10 @@ void UEPMainMenuWidget::NativeConstruct()
 		PlayGameButton->OnClicked.AddDynamic(this, &UEPMainMenuWidget::OnPlayGameButtonClicked);
 	}
 
-	if(SettingsButton)
-	{
-		SettingsButton->OnClicked.AddDynamic(this, &UEPMainMenuWidget::OnSettingsButtonClicked);
-	}
+	//if(SettingsButton)
+	//{
+	//	SettingsButton->OnClicked.AddDynamic(this, &UEPMainMenuWidget::OnSettingsButtonClicked);
+	//}
 
 	if(ExitGameButton)
 	{
@@ -57,17 +57,17 @@ void UEPMainMenuWidget::OnPlayGameButtonClicked()
 	}
 }
 
-void UEPMainMenuWidget::OnSettingsButtonClicked()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("세팅버튼 눌림"));
-
-	const IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-	if (OnlineSub)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("서브시스템 : %s"), *OnlineSub->GetSubsystemName().ToString()));
-	}
-
-}
+//void UEPMainMenuWidget::OnSettingsButtonClicked()
+//{
+//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("세팅버튼 눌림"));
+//
+//	const IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+//	if (OnlineSub)
+//	{
+//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("서브시스템 : %s"), *OnlineSub->GetSubsystemName().ToString()));
+//	}
+//
+//}
 
 void UEPMainMenuWidget::OnExitGameButtonClicked()
 {

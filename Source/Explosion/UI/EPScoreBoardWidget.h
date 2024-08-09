@@ -21,10 +21,14 @@ public:
 public:
 	void UpdateScoreBoard();
 	void ResizeScoreBoard(int32 scoreBoardSize);
+	void TurnOnGrayBackBoard();
 	
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UVerticalBox> PlayerScoreVerticalBox;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UBorder> BackgroundBoarder;
 
 	TSubclassOf<class UEPBasicTextWidget> PlayerScoreWidgetClass;
 	TArray<TObjectPtr<class UEPBasicTextWidget>> PlayerScoreWidgets;

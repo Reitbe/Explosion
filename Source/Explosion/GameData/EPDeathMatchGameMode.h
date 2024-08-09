@@ -26,8 +26,11 @@ public:
 	int GetMatchScoreLimit() const { return MatchScoreLimit; }
 	float GetMatchTimeLimit() const { return MatchTimeLimit; }
 
+	void CheckAllPlayersReady();
+
 protected:
 	void SetTheEndMatch();
+	void StartMainGame();
 	void EndMatch();
 
 protected:
@@ -36,6 +39,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TArray<TObjectPtr<AActor>> PlayerStartPointsArray;
+	TQueue<int32> OccupiedPlayerStartPointIndices;
 
 	UPROPERTY(EditAnywhere)
 	TArray<TObjectPtr<AActor>> ItemSpawnPointsArray;
@@ -46,4 +50,7 @@ protected:
 
 	int32 ReturnToLobbyDelay;
 
+private:
+	int32 ReadyPlayerCount{ 0 };
+	int32 PlayerCountInGame{ 0 }; 
 };

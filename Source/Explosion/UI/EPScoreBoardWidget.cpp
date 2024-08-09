@@ -4,6 +4,7 @@
 #include "EPScoreBoardWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
+#include "Components/Border.h"
 #include "Explosion/UI/EPBasicTextWidget.h"
 #include "Explosion/GameData/EPGameState.h"
 #include "Explosion/GameData/EPPlayerState.h"
@@ -11,7 +12,7 @@
 
 UEPScoreBoardWidget::UEPScoreBoardWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	static ConstructorHelpers::FClassFinder<UUserWidget> TextBlockWidgetClassFinder
+	static ConstructorHelpers::FClassFinder<UEPBasicTextWidget> TextBlockWidgetClassFinder
 	(TEXT("/Game/UI/WBP_PlayerScoreWidget.WBP_PlayerScoreWidget_C"));
 	if (TextBlockWidgetClassFinder.Class)
 	{
@@ -22,7 +23,7 @@ UEPScoreBoardWidget::UEPScoreBoardWidget(const FObjectInitializer& ObjectInitial
 void UEPScoreBoardWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	UpdateScoreBoard();
+	//UpdateScoreBoard();
 }
 
 void UEPScoreBoardWidget::UpdateScoreBoard()
@@ -65,4 +66,9 @@ void UEPScoreBoardWidget::ResizeScoreBoard(int32 scoreBoardSize)
 			PlayerScoreWidgets.RemoveAt(LastIndex);
 		}
 	}
+}
+
+void UEPScoreBoardWidget::TurnOnGrayBackBoard()
+{
+	BackgroundBoarder->SetBrushColor(FLinearColor(0.125f, 0.125f, 0.125f, 0.7)); 
 }

@@ -15,3 +15,11 @@ void UEPBasicTextWidget::SetText(FText text)
 		BasicTextBlock->SetText(text);
 	}
 }
+
+void UEPBasicTextWidget::SetTextColorAndOpacity(FLinearColor NewColorAndOpacity)
+{
+	if (BasicTextBlock)
+	{
+		BasicTextBlock->SetColorAndOpacity(NewColorAndOpacity);
+	}
+}

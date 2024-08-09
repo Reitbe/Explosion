@@ -16,19 +16,38 @@ class EXPLOSION_API AEPLobbyPlayerController : public APlayerController
 
 public:
 	AEPLobbyPlayerController();
+	void SetReady();
+
+	void StartSession();
+
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_UpdateLobbyStatue(bool IsOnMainMenu);
+
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_UpdatePalyerCount(int32 PlayerInSession, int32 MaxPlayer);
 
 protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
 	void OnCreateSessionComplete(bool bWasSuccesssful);
+
+// 준비
+protected:
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetReady();
 	
+
+protected:
+	class UEPMultiplayerSessionSubsystem* MultiplayerSessionSubsystem;
+	
+	TObjectPtr<class UEPLobbyStatueManager> StatueManager;
 
 // UI 
 protected:
-	UPROPERTY(EditAnyWhere, Category = "UI")
-	TSubclassOf<class UUserWidget> MainMenuWidgetClass;
-
-	UPROPERTY()
+	TSubclassOf<class UEPMainMenuWidget> MainMenuWidgetClass;
 	TObjectPtr<class UEPMainMenuWidget> MainMenuWidget;
+
+	TSubclassOf<class UEPLobbyWidget> LobbyWidgetClass;
+	TObjectPtr<class UEPLobbyWidget> LobbyWidget;
 };

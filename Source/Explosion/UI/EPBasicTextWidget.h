@@ -14,7 +14,9 @@ class EXPLOSION_API UEPBasicTextWidget : public UUserWidget
 	
 public:
 	virtual void NativeConstruct() override;
+
 	void SetText(FText Text);
+	void SetTextColorAndOpacity(FLinearColor ColorAndOpacity);
 
 protected:
 	UPROPERTY(meta = (BindWidget))

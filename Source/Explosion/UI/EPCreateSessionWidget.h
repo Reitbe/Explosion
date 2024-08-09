@@ -18,11 +18,17 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
-	UFUNCTION()
-	void OnMaxPlayerTextCommitted(const FText& text, ETextCommit::Type CommitMethod);
+	//UFUNCTION()
+	//void OnMaxPlayerTextCommitted(const FText& text, ETextCommit::Type CommitMethod);
 
 	UFUNCTION()
 	void OnLANCheckBoxStateChanged(bool bIsChecked);
+
+	UFUNCTION()
+	void OnSelectTwoPlayerButtonClicked();
+
+	UFUNCTION()
+	void OnSelectFourPlayerButtonClicked();
 
 	UFUNCTION()
 	void OnCreateSessionButtonClicked();
@@ -31,8 +37,16 @@ protected:
 	void OnCreateSessionComplete(bool bWasSuccessful);
 
 protected:
+	class UEPMultiplayerSessionSubsystem* MultiplayerSessionSubsystem;
+
+	//UPROPERTY(meta = (BindWidget))
+	//TObjectPtr<class UEditableTextBox> MaxPlayerEditableTextBox;
+
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<class UEditableTextBox> MaxPlayerEditableTextBox;
+	TObjectPtr<class UButton> SelectTwoPlayerButton;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UButton> SelectFourPlayerButton;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UCheckBox> LANCheckBox;
@@ -42,6 +56,7 @@ protected:
 	
 	int32 MaxPlayerNum;
 	uint8 bUseLAN : 1;
+	FString TypeOfMatch = FString(TEXT("FreeForAll"));
 	FString LevelPath;
 	FString LevelGameModeOption;
 };

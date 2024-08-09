@@ -19,10 +19,15 @@ public:
 	UEPGameInstance();
 	virtual void Init() override;
 
+	int32 GetPlayerCount() { return PlayerCount; };
+	void SetPlayerCount(int32 NewPlayerCount) { PlayerCount = NewPlayerCount; };
+
 	FEPCharacterStat GetDefaultCharacterStat() { return DefaultStat; };
 
 protected:
 	TObjectPtr<UDataTable> CharacterStatTable;
 	FEPCharacterStat DefaultStat;
 
+private:
+	int32 PlayerCount{ 0 };
 };

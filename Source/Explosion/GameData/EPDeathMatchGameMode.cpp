@@ -4,17 +4,48 @@
 #include "EPDeathMatchGameMode.h"
 #include "Explosion/GameData/EPPlayerState.h"
 #include "Explosion/GameData/EPGameState.h"
+#include "Explosion/GameData/EPGameInstance.h"
 #include "Explosion/Player/EPPlayerController.h"
 #include "Explosion/Character/EPCharacterPlayer.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
+
+
 AEPDeathMatchGameMode::AEPDeathMatchGameMode()
 {
-	GameStateClass = AEPGameState::StaticClass();
-	PlayerControllerClass = AEPPlayerController::StaticClass();
-	PlayerStateClass = AEPPlayerState::StaticClass();
-	DefaultPawnClass = AEPCharacterPlayer::StaticClass();
+	static ConstructorHelpers::FClassFinder<AEPGameState> GameStateClassFinder
+	(TEXT("/Game/GameMode/BP_GameState.BP_GameState_C"));
+	if (GameStateClassFinder.Class)
+	{
+		GameStateClass = GameStateClassFinder.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<AEPPlayerController> PlayerControllerClassFinder
+	(TEXT("/Game/GameMode/BP_PlayerController.BP_PlayerController_C"));
+	if (PlayerControllerClassFinder.Class)
+	{
+		PlayerControllerClass = PlayerControllerClassFinder.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<AEPPlayerState> PlayerStateClassFinder
+	(TEXT("/Game/GameMode/BP_PlayerState.BP_PlayerState_C"));
+	if (PlayerStateClassFinder.Class)
+	{
+		PlayerStateClass = PlayerStateClassFinder.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<AEPCharacterPlayer> DefaultPawnClassFinder
+	(TEXT("/Game/Character/BP_CharacterPlayer.BP_CharacterPlayer_C"));
+	if (DefaultPawnClassFinder.Class)
+	{
+		DefaultPawnClass = DefaultPawnClassFinder.Class;
+	}
+
+	//GameStateClass = AEPGameState::StaticClass();
+	//PlayerControllerClass = AEPPlayerController::StaticClass();
+	//PlayerStateClass = AEPPlayerState::StaticClass();
+	//DefaultPawnClass = AEPCharacterPlayer::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<APlayerStart> PlayerStartPointClassFinder
 	(TEXT("/Game/Map/BP_PlayerSpawnPoint.BP_PlayerSpawnPoint_C"));
@@ -74,25 +105,55 @@ void AEPDeathMatchGameMode::Logout(AController* Exiting)
 void AEPDeathMatchGameMode::StartPlay()
 {
 	Super::StartPlay();	
-	FTimerHandle EndMatchTimerHandle;
-	float EndMatchTime = GetGameState<AEPGameState>()->GetMatchTimeLimit();
-	GetWorldTimerManager().SetTimer(EndMatchTimerHandle, this, &AEPDeathMatchGameMode::SetTheEndMatch, EndMatchTime, false);
 
 	// 스폰포인트 액터 배열 초기화
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerStartPointClass, PlayerStartPointsArray);
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ItemSpawnPointClass, ItemSpawnPointsArray);
+	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerStartPointClass, PlayerStartPointsArray);
+	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), ItemSpawnPointClass, ItemSpawnPointsArray);
+
+	// 로비에 있던 전체 플레이어 수를 가져온다
+	UEPGameInstance* EPGameInstance = Cast<UEPGameInstance>(GetGameInstance());
+	if (EPGameInstance)
+	{
+		PlayerCountInGame = EPGameInstance->GetPlayerCount();
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("플레이어 수 : %d"), PlayerCountInGame));
+	}
 }
 
 
 FTransform AEPDeathMatchGameMode::GetRandomStartTransform()
 {
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerStartPointClass, PlayerStartPointsArray);
     if (PlayerStartPointsArray.Num() == 0)
     {
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("이 씨발 어레이 못찾았구나.")));
         return FTransform(FVector(0.0f, 0.0f, 400.0f));
     }
 
-    int32 RandomIndex = FMath::RandRange(0, PlayerStartPointsArray.Num() - 1);
-    return PlayerStartPointsArray[RandomIndex]->GetActorTransform();
+	// 플레이어 스폰포인트 중에서 Free인 것을 찾아서 사용
+	int32 RandomIndex = 0;
+	APlayerStart* PlayerStartPoint = nullptr;
+
+	do {
+		RandomIndex = FMath::RandRange(0, PlayerStartPointsArray.Num() - 1);
+		PlayerStartPoint = Cast<APlayerStart>(PlayerStartPointsArray[RandomIndex]);
+	} while (PlayerStartPoint->PlayerStartTag != FName("Free"));
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("사용한 스폰포인트 : %d"), RandomIndex));
+
+	// 사용한 스폰포인트는 5초 후 재사용 가능
+	PlayerStartPoint->PlayerStartTag = FName("Occupied");
+	OccupiedPlayerStartPointIndices.Enqueue(RandomIndex);
+
+	FTimerHandle ReleasePlayerStartTagTimerHandle;
+	GetWorldTimerManager().SetTimer(ReleasePlayerStartTagTimerHandle, FTimerDelegate::CreateLambda([&]() 
+		{
+			int32 ReleaseIndex = *OccupiedPlayerStartPointIndices.Peek();
+			OccupiedPlayerStartPointIndices.Pop();
+			Cast<APlayerStart>(PlayerStartPointsArray[ReleaseIndex])->PlayerStartTag = FName("Free");
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("플레이어 스폰포인트 태그 해제")));
+		}
+	), 3.0f, false);
+
+    return PlayerStartPoint->GetActorTransform();
 }
 
 FTransform AEPDeathMatchGameMode::GetRandomItemSpawnTransform()
@@ -124,6 +185,8 @@ void AEPDeathMatchGameMode::OnPlayerKilled(AController* KillerPlayer, AControlle
 	}
 	KilledPlayerState->AddDeathCount(); // 데스(자살 포함)
 	EPGameState->UpdateScoreBoard(KillerPlayerState); // 스코어보드 업데이트
+	// 스코어보드 UI 업데이트 - 서버만 호출, 클라이언트는 GameState의 OnRep_PostUpdateScoreBoard에서 호출
+	GetGameState<AEPGameState>()->OnRep_PostUpdateScoreBoard();
 
 	// 스코어 리미트 체크
 	if (EPGameState->ScoreBoard.Num() > 0)
@@ -134,21 +197,21 @@ void AEPDeathMatchGameMode::OnPlayerKilled(AController* KillerPlayer, AControlle
 			SetTheEndMatch();
 		}
 	}
+}
 
-	// 개별 스코어 보드 업데이트
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+void AEPDeathMatchGameMode::CheckAllPlayersReady()
+{
+	++ReadyPlayerCount;
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("준비된 플레이어 : %d, 전체 인원 : %d"), ReadyPlayerCount, PlayerCountInGame));
+	//if (ReadyPlayerCount >= PlayerCountInGame) 
+	if(ReadyPlayerCount >= 2) // PIE 테스트용
 	{
-		APlayerController* PlayerController = It->Get();
-		if (PlayerController)
-		{
-			AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(PlayerController);
-			if (EPPlayerController)
-			{
-				EPPlayerController->ClientRPCUpdateScoreBoard();
-			}
-		}
+		// 바로 게임 시작
+		FTimerHandle StartMainGameTimerHandle;
+		GetWorldTimerManager().SetTimer(StartMainGameTimerHandle, this, &AEPDeathMatchGameMode::StartMainGame, 5.0f, false);
 	}
 }
+
 
 void AEPDeathMatchGameMode::SetTheEndMatch()
 {
@@ -159,7 +222,7 @@ void AEPDeathMatchGameMode::SetTheEndMatch()
 		EPGameState->SetIsSetupEndMatch(true);
 	}
 
-	// 모든플레이어 컨트롤러에 대하여 사망 띄우기 호출
+	// 모든플레이어 컨트롤러에 대하여 게임 종료 띄우기 호출
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PlayerController = It->Get();
@@ -175,6 +238,35 @@ void AEPDeathMatchGameMode::SetTheEndMatch()
 
 	FTimerHandle EndMatchTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(EndMatchTimerHandle, this, &AEPDeathMatchGameMode::EndMatch, ReturnToLobbyDelay, false);
+}
+
+void AEPDeathMatchGameMode::StartMainGame()
+{
+	// 클라이언트 사이드에서 
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PlayerController = It->Get();
+		if (PlayerController)
+		{
+			AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(PlayerController);
+			if (EPPlayerController)
+			{
+				// 그냥 브로드캐스트? 아니면 클라RPC해서 거기서 브로드캐스트 
+ 				EPPlayerController->ClientRPC_StartMainGame();
+			}
+		}
+	}
+
+	// 스폰포인트 액터 배열 초기화
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerStartPointClass, PlayerStartPointsArray);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ItemSpawnPointClass, ItemSpawnPointsArray);
+
+	// 서버에서도 인게임 타이머 시작
+	FTimerHandle EndMatchTimerHandle;
+	float EndMatchTime = GetGameState<AEPGameState>()->GetMatchTimeLimit();
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("타이머 시작한다!")));
+
+	GetWorldTimerManager().SetTimer(EndMatchTimerHandle, this, &AEPDeathMatchGameMode::SetTheEndMatch, EndMatchTime, false);
 }
 
 void AEPDeathMatchGameMode::EndMatch()
