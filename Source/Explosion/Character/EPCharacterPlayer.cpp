@@ -1,12 +1,21 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#pragma once
 
 #include "Explosion/Character/EPCharacterPlayer.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/VerticalBox.h"
 #include "Camera/CameraComponent.h"
 #include "Explosion/Animation/EPPlayerAnimInstance.h"
 #include "Explosion/Bomb/EPBombBase.h"
 #include "Explosion/Bomb/EPBombManager.h"
+#include "Explosion/Stat/EPCharacterStatComponent.h"
+#include "Explosion/GameData/EPDeathMatchGameMode.h"
+#include "Explosion/GameData/EPGameState.h"
+#include "Explosion/Item/EPItemBase.h"
+#include "Explosion/UI/EPHUDWidget.h"
+#include "Explosion/UI/EPChargingBarWidget.h"
+#include "Explosion/EPCharacterStat.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -14,10 +23,12 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
+#include "LegacyCameraShake.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
 #include "Explosion/Explosion.h"
-// EP_LOG(LogExplosion, Log, TEXT("%s"), TEXT("전체 다 몽타주를 재생"));
+
+// EP_LOG(LogExplosion, Log, TEXT("%s"), TEXT("로그 참고용"));
 
 AEPCharacterPlayer::AEPCharacterPlayer()
 {
@@ -60,7 +71,7 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 	static ConstructorHelpers::FObjectFinder<UInputAction> InputActoinLookFinder
 	(TEXT("/Game/Input/IA_Looking.IA_Looking"));
 	if (InputActoinLookFinder.Succeeded())
-	{
+	{ 
 		Looking = InputActoinLookFinder.Object;
 	}
 
@@ -108,16 +119,39 @@ AEPCharacterPlayer::AEPCharacterPlayer()
 		AimingMontage = AimingMontageFinder.Object;
 	}
 
+	// 에셋 로드 - UI
+	static ConstructorHelpers::FClassFinder<UEPChargingBarWidget> ChargingBarWidgetFinder
+	(TEXT("/Game/UI/WBP_ChargingBarWidget.WBP_ChargingBarWidget_C"));
+	if (ChargingBarWidgetFinder.Class)
+	{
+		ChargingBarWidgetClass = ChargingBarWidgetFinder.Class;
+	}
+
+	// 에셋 로드 - 카메라 쉐이크
+	static ConstructorHelpers::FClassFinder<UCameraShakeBase> CameraShakeClassFinder
+	(TEXT("/Game/Animation/CameraShake/BP_Bomb_CS.BP_Bomb_CS_C"));
+	if (CameraShakeClassFinder.Class)
+	{
+		CameraShakeClass = CameraShakeClassFinder.Class;
+	}
+
 	// 카메라 설정
 	DefaultSpringArmLength = 350.0f;
 	ZoomedSpringArmLength = 120.0f;
 
 	// 폭탄 설정
-	ThrowingVelocityMultiplier = 1.0f;
+	ThrowingVelocityMultiplierDefault = 1.0f;
+	ThrowingVelocityMultiplierMax = ThrowingVelocityMultiplierDefault + 1.0f;
+	ThrowingVelocityMultiplier = ThrowingVelocityMultiplierDefault;
+
 	ThrowingVelocity = 500.0f;
 
 	bIsAiming = false;
 	bIsThrowing = false;
+
+	RespawnTime = 3.0f;
+
+	ChargingDuration = 2.0f;
 }
 
 void AEPCharacterPlayer::BeginPlay()
@@ -130,7 +164,7 @@ void AEPCharacterPlayer::BeginPlay()
 	{
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
 		if (Subsystem != nullptr) {
-			Subsystem->AddMappingContext(InputMappingContext, 0);
+			Subsystem->AddMappingContext(InputMappingContext, 1);
 		}
 	}
 
@@ -140,9 +174,14 @@ void AEPCharacterPlayer::BeginPlay()
 
 	AnimInstance = GetMesh()->GetAnimInstance();
 
-	// 들고 있을 폭탄 스폰 및 소켓에 부착
+
 	if (HasAuthority())
 	{
+		// 첫 시작 위치 지정
+		FTimerHandle TeleportToFirstSpawnPointTimerHandle;
+		GetWorldTimerManager().SetTimer(TeleportToFirstSpawnPointTimerHandle, this, &AEPCharacterPlayer::TeleportToFirstSpawnPoint, 2.0f, false);
+
+		// 들고 있을 폭탄 스폰 및 소켓에 부착
 		BombInHand = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FTransform::Identity);
 		if (BombInHand)
 		{
@@ -160,6 +199,17 @@ void AEPCharacterPlayer::BeginPlay()
 		}
 	}
 
+	// 차징 바 위젯 생성
+	if (IsLocallyControlled())
+	{
+		ChargingBarWidget = CreateWidget<UEPChargingBarWidget>(GetWorld(), ChargingBarWidgetClass);
+		HUDWidget->ChargingBarFrame->AddChild(ChargingBarWidget);
+		ChargingBarWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	// 사망 바인딩
+	StatComponent->OnHpZero.AddUObject(this, &AEPCharacterPlayer::SetDead);
+
 	// 폭탄을 던지고 재장전 할 때의 대리자 연결
 	OnThrowingBombDelegate.BindUObject(this, &AEPCharacterPlayer::OnThrowingBomb);
 	OnReloadingBombDelegate.BindUObject(this, &AEPCharacterPlayer::OnReloadingBomb);
@@ -171,6 +221,84 @@ void AEPCharacterPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(AEPCharacterPlayer, bIsAiming);
 	DOREPLIFETIME(AEPCharacterPlayer, bIsThrowing);
 }
+
+float AEPCharacterPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	ClientRPC_ShakeCamera();
+	return 0.0f;
+}
+
+void AEPCharacterPlayer::TeleportToFirstSpawnPoint()
+{
+	// 첫 시작 위치 설정
+	AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("트랜스폼 가져오기 실행"));
+		FTransform NewTransform = GameMode->GetRandomStartTransform();
+		TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator());
+		if (TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator()))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 성공"));
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 실패"));
+		}
+	}
+}
+
+
+void AEPCharacterPlayer::SetDead()
+{
+	Super::SetDead();
+	//GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	//GetMesh()->SetSimulatePhysics(true);
+	if (BombInHand)
+	{
+		BombInHand->SetActorHiddenInGame(true);
+	}
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	DisableInput(PlayerController);
+
+	GetWorldTimerManager().SetTimer(DeadTimerHandle, this, &AEPCharacterPlayer::ResetPlayer, RespawnTime, false);
+}
+
+void AEPCharacterPlayer::ResetPlayer()
+{
+	if (AnimInstance)
+	{
+		AnimInstance->StopAllMontages(0.0f);
+	}
+
+	if (GetWorld()->GetGameState<AEPGameState>()->GetIsSetupEndMatch() == false)
+	{
+		EnableInput(PlayerController);
+	}
+
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	
+	if (BombInHand)
+	{
+		BombInHand->SetActorHiddenInGame(false);
+	}
+
+	StatComponent->ResetHp();
+
+	if (HasAuthority())
+	{
+		AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
+		if (GameMode)
+		{
+			FTransform NewTransform = GameMode->GetRandomStartTransform();
+			TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator());
+		}
+	}
+}
+
 
 void AEPCharacterPlayer::Tick(float DeltaTime)
 {
@@ -204,6 +332,15 @@ void AEPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		Input->BindAction(AimingBomb, ETriggerEvent::Started, this, &AEPCharacterPlayer::AimingOn);
 		Input->BindAction(AimingBomb, ETriggerEvent::Completed, this, &AEPCharacterPlayer::AimingOff);
 		Input->BindAction(ThrowingBomb, ETriggerEvent::Started, this, &AEPCharacterPlayer::Throwing);
+	}
+}
+
+void AEPCharacterPlayer::ClientRPC_ShakeCamera_Implementation()
+{
+	if (CameraShakeClass)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("카메라 쉐이크 실행"));
+		PlayerController->ClientStartCameraShake(CameraShakeClass, 1.0f);
 	}
 }
 
@@ -260,6 +397,20 @@ void AEPCharacterPlayer::ServerRPCAimingOn_Implementation(bool bIsAimingOn)
 	OnRep_Aiming();
 }
 
+void AEPCharacterPlayer::TakeItem(AEPItemBase* NewItemBase)
+{
+	if (NewItemBase)
+	{
+		switch (NewItemBase->Type)
+		{
+		case EItemType::IT_Health:
+			float ItemHpValue = NewItemBase->ItemStat.MaxHp;
+			StatComponent->RecoverHp(ItemHpValue);
+			break;
+		}
+	}
+}
+
 void AEPCharacterPlayer::OnRep_Aiming()
 {
 	if (AnimInstance)
@@ -268,23 +419,34 @@ void AEPCharacterPlayer::OnRep_Aiming()
 		if (bIsAiming)
 		{
 			AnimInstance->Montage_Play(AimingMontage);
+			if (IsLocallyControlled() && ChargingBarWidget)
+			{
+				ChargingBarWidget->SetVisibility(ESlateVisibility::Visible);
+				ChargingBarWidget->StartChargingBar(ChargingDuration);
+			}
 			if (HasAuthority())
 			{
 				GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
 					{
-						ThrowingVelocityMultiplier = 2.0f;
+						ThrowingVelocityMultiplier = ThrowingVelocityMultiplierMax;
 					}
-				), 2.0f, false);
+				), ChargingDuration, false);
 			}
 		}
 		// 조준 해제
 		else
 		{
 			AnimInstance->Montage_Stop(0.3f, AimingMontage);
+
+			if (IsLocallyControlled() && ChargingBarWidget)
+			{
+				ChargingBarWidget->EndChargingBar();
+				ChargingBarWidget->SetVisibility(ESlateVisibility::Collapsed);
+			}
 			if (HasAuthority())
 			{
 				GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
-				ThrowingVelocityMultiplier = 1.0f;
+				ThrowingVelocityMultiplier = ThrowingVelocityMultiplierDefault;
 			}
 		}
 	}
@@ -323,24 +485,29 @@ void AEPCharacterPlayer::OnRep_Throwing()
 			AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, ThrowingMontage);
 		}
 
+		if (IsLocallyControlled() && ChargingBarWidget)
+		{
+			ChargingBarWidget->EndChargingBar();
+		}
+
 		if (HasAuthority())
 		{
 			if (bIsAiming == false)
 			{
-				ThrowingVelocityMultiplier = 1.0f;
+				ThrowingVelocityMultiplier = ThrowingVelocityMultiplierDefault;
 			}
-			else if (ThrowingVelocityMultiplier != 2.0f)
+			else if (ThrowingVelocityMultiplier < ThrowingVelocityMultiplierMax)
 			{
-				ThrowingVelocityMultiplier += GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle) / 2.0f;
+				float ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ChargingRateTimerHandle);
+				ThrowingVelocityMultiplier = ThrowingVelocityMultiplierDefault * (1.0 + (ElapsedTime / ChargingDuration));
 			}
 			else
 			{
-				ThrowingVelocityMultiplier = 2.0f;
+				ThrowingVelocityMultiplier = ThrowingVelocityMultiplierMax;
 			}
 		}
 	}
 }
-
 
 void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMontage, bool IsProperlyEnded)
 {
@@ -351,16 +518,21 @@ void AEPCharacterPlayer::Throwing_OnMontageEnded(class UAnimMontage* TargetMonta
 			AnimInstance->Montage_Play(AimingMontage);
 		}
 
+		if (IsLocallyControlled() && ChargingBarWidget)
+		{
+			ChargingBarWidget->StartChargingBar(ChargingDuration);
+		}
+
 		if (HasAuthority())
 		{
-			ThrowingVelocityMultiplier = 1.0f;
+			ThrowingVelocityMultiplier = ThrowingVelocityMultiplierDefault;
 
 			GetWorldTimerManager().ClearTimer(ChargingRateTimerHandle);
 			GetWorldTimerManager().SetTimer(ChargingRateTimerHandle, FTimerDelegate::CreateLambda([&]()
 				{
-					ThrowingVelocityMultiplier = 2.0f;
+					ThrowingVelocityMultiplier = ThrowingVelocityMultiplierMax;
 				}
-			), 2.0f, false);
+			), ChargingDuration, false);
 		}
 	}
 
@@ -396,7 +568,6 @@ void AEPCharacterPlayer::OnThrowingBomb()
 		BombToThrow = BombManager->TakeBomb();
 		if (BombToThrow)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%s"), *BombToThrow->GetFName().ToString()));
 			BombToThrow->SetActorLocationAndRotation(BombInHandLocation, BombInHandRotation);
 			ThrowingPower = ThrowingDirection * ThrowingVelocityMultiplier * ThrowingVelocity * BombMass;
 			BombToThrow->GetBombMeshComponent()->AddImpulse(ThrowingPower);

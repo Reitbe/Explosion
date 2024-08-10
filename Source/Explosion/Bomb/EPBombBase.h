@@ -74,16 +74,16 @@ public:
 
 // Bomb Stat(임시)
 protected:
-	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
+	UPROPERTY(EditAnyWhere, Category = "BombStat")
 	float BombMass;
 
-	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
+	UPROPERTY(EditAnyWhere, Category = "BombStat")
 	float BombDamage;
 
-	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
-	float BombArea;
+	UPROPERTY(EditAnyWhere, Category = "BombStat")
+	float BombAreaRadius;
 
-	UPROPERTY(VisibleAnyWhere, Category = "BombStat")
+	UPROPERTY(EditAnyWhere, Category = "BombStat")
 	float BombDelayTime;
 
 	uint8 bIsBombActive : 1;

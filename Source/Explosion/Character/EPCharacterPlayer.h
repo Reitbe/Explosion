@@ -21,13 +21,25 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(client, reliable)
+	void ClientRPC_ShakeCamera();
+
 // PlayerController Section
 protected:
 	TObjectPtr<APlayerController> PlayerController;
+
+// Dead and Respawn Section
+public:
+	FTimerHandle DeadTimerHandle;
+
+protected:
+	virtual void SetDead() override;
+	void ResetPlayer();
 
 
 // Input Section
@@ -88,9 +100,16 @@ protected:
 	UPROPERTY(EditAnyWhere, Category = "Camera")
 	TObjectPtr<class UCurveFloat> CameraZoomCurve;
 
+	TSubclassOf<class UCameraShakeBase> CameraShakeClass;
+
 	FOnTimelineFloat CameraZoomHandler;
 	float DefaultSpringArmLength;
 	float ZoomedSpringArmLength;
+
+// Item Section
+protected:
+	UFUNCTION()
+	virtual void TakeItem(AEPItemBase* NewItemBase) override;
 
 
 // Aiming & Throwing Section
@@ -113,10 +132,15 @@ protected:
 	UFUNCTION()
 	void OnRep_Throwing();
 
+	float ChargingDuration;
+
 	//UFUNCTION()
 	//void DrawThrowingPath();
 
 // Bomb Section
+protected:
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 protected:
 	FTimerHandle ChargingRateTimerHandle;
 
@@ -132,9 +156,26 @@ protected:
 	UPROPERTY(EditAnyWhere, Category = "Bomb")
 	float ThrowingVelocityMultiplier;
 
+	float ThrowingVelocityMultiplierDefault;
+	float ThrowingVelocityMultiplierMax;
+
 	UPROPERTY(ReplicatedUsing = OnRep_Aiming, EditAnyWhere, Category = "Bomb")
 	uint8 bIsAiming : 1;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Throwing, EditAnyWhere, Category = "Bomb")
 	uint8 bIsThrowing : 1;
+
+// UI Section
+	TSubclassOf<class UEPChargingBarWidget> ChargingBarWidgetClass;
+	TObjectPtr<class UEPChargingBarWidget> ChargingBarWidget;
+
+// Respawn Section
+protected:
+	UFUNCTION()
+	void TeleportToFirstSpawnPoint();
+
+protected:
+	UPROPERTY(EditAnyWhere, Category = "Respawn")
+	float RespawnTime;
+
 };
