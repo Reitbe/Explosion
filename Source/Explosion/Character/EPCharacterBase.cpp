@@ -8,6 +8,7 @@
 #include "Explosion/Bomb/EPBombManager.h"
 #include "Explosion/Stat/EPCharacterStatComponent.h"
 #include "Explosion/GameData/EPDeathMatchGameMode.h"
+#include "Explosion/GameData/EPPlayerState.h"
 #include "Explosion/Player/EPPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -32,6 +33,8 @@ AEPCharacterBase::AEPCharacterBase()
 	// Mesh 설정
 	GetMesh() ->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	//GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
 	// Bomb Manager 설정
 	BombManager = CreateDefaultSubobject<UEPBombManager>(TEXT("BombManager"));
@@ -88,7 +91,11 @@ void AEPCharacterBase::BeginPlay()
 	OverHeadWidget = Cast<UEPOverHeadWidget>(OverHeadWidgetComponent->GetUserWidgetObject());
 	if (OverHeadWidget)
 	{
-		OverHeadWidget->UpdateNameTag(this); // 임시로 이름 설정
+		// 플레이어 정보가 준비되는 것을 기다리는 2초
+		FTimerHandle CharacterPlayerBeginPlayTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(CharacterPlayerBeginPlayTimerHandle, this, &AEPCharacterBase::SetOverHeadPlayerNameUI, 2.0f, false, -1.0f);
+		
+		// 로컬 플레이어인 경우에는 오버헤드 위젯을 숨김
 		if (IsLocallyControlled()) 
 		{
 			OverHeadWidget->SetVisibility(ESlateVisibility::Collapsed);
@@ -187,6 +194,23 @@ void AEPCharacterBase::StartMainGame()
 	{
 		HUDWidget->StartTimer();
 	}
+}
+
+void AEPCharacterBase::SetOverHeadPlayerNameUI()
+{
+	FString PlayerName = "";
+	AEPPlayerState* EPPlayerState = GetPlayerState<AEPPlayerState>();
+	if (EPPlayerState)
+	{
+		PlayerName = EPPlayerState->GetPlayerName();
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("플레이어 스테이트가 없습니다.")));
+	}
+	OverHeadWidget->UpdateNameTag(PlayerName);
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("캐플 BeginPlay - 플레이어 이름 : %s"), *PlayerName));
+
 }
 
 void AEPCharacterBase::ServerRPC_PlayerReady_Implementation()

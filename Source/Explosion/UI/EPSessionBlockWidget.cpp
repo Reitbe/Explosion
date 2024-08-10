@@ -58,6 +58,7 @@ void UEPSessionBlockWidget::OnJoinSessionButtonClicked()
 {
 	if (MultiplayerSessionSubsystem)
 	{
+		JoinSessionButton->SetIsEnabled(false);
 		MultiplayerSessionSubsystem->JoinSession(SessionFindResult);
 	}
 }
@@ -67,14 +68,23 @@ void UEPSessionBlockWidget::OnJoinSessionComplete(EOnJoinSessionCompleteResult::
 	IOnlineSessionPtr SessionInterface = *MultiplayerSessionSubsystem->GetSessionInterface();
 	if (SessionInterface.IsValid())
 	{
-		FString Address;
-		SessionInterface->GetResolvedConnectString(NAME_GameSession, Address);
-
-		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-		if (PlayerController)
+		if (Result == EOnJoinSessionCompleteResult::Success)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("조인세션 했고 트래블 간다!! : %s"), *Address));
-			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+			FString Address;
+			SessionInterface->GetResolvedConnectString(NAME_GameSession, Address);
+
+			APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+			if (PlayerController)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("조인세션 했고 트래블 간다!! : %s"), *Address));
+				PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+			}
+		}
+		else
+		{
+			// 세션에 조인 실패
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("조인세션 실패함")));
+			JoinSessionButton->SetIsEnabled(true);
 		}
 	}
 }

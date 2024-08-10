@@ -33,6 +33,8 @@ protected:
 	void StartMainGame();
 	void EndMatch();
 
+	int32 GetLobbyPlayerCount() const;
+
 protected:
 	TSubclassOf<class APlayerStart> PlayerStartPointClass;
 	TSubclassOf<class APlayerStart> ItemSpawnPointClass;

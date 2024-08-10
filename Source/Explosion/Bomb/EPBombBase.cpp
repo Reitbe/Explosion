@@ -39,6 +39,7 @@ void AEPBombBase::BeginPlay()
 	Super::BeginPlay();
 	SetReplicates(true);
 	SetReplicateMovement(true);
+	bAlwaysRelevant = true;
 }
 
 void AEPBombBase::Tick(float DeltaTime)

@@ -171,6 +171,10 @@ protected:
 
 // Respawn Section
 protected:
+	UFUNCTION()
+	void TeleportToFirstSpawnPoint();
+
+protected:
 	UPROPERTY(EditAnyWhere, Category = "Respawn")
 	float RespawnTime;
 

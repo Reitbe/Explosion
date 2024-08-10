@@ -27,7 +27,7 @@ void UEPGameInstance::Init()
 	{
 		GameUserSettings->SetOverallScalabilityLevel(1);
 		GameUserSettings->SetFullscreenMode(EWindowMode::Windowed);
-		GameUserSettings->ApplySettings(false);
+		GameUserSettings->ApplySettings(true);
 	}
 	
 }

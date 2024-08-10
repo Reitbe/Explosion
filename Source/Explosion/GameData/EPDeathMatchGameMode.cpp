@@ -111,12 +111,6 @@ void AEPDeathMatchGameMode::StartPlay()
 	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), ItemSpawnPointClass, ItemSpawnPointsArray);
 
 	// 로비에 있던 전체 플레이어 수를 가져온다
-	UEPGameInstance* EPGameInstance = Cast<UEPGameInstance>(GetGameInstance());
-	if (EPGameInstance)
-	{
-		PlayerCountInGame = EPGameInstance->GetPlayerCount();
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("플레이어 수 : %d"), PlayerCountInGame));
-	}
 }
 
 
@@ -201,14 +195,21 @@ void AEPDeathMatchGameMode::OnPlayerKilled(AController* KillerPlayer, AControlle
 
 void AEPDeathMatchGameMode::CheckAllPlayersReady()
 {
+	// 게임 인스턴스에서 값을 가져오지 못한 경우에는 종료 후 재호출
 	++ReadyPlayerCount;
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("준비된 플레이어 : %d, 전체 인원 : %d"), ReadyPlayerCount, PlayerCountInGame));
-	//if (ReadyPlayerCount >= PlayerCountInGame) 
-	if(ReadyPlayerCount >= 2) // PIE 테스트용
+
+	PlayerCountInGame = GetLobbyPlayerCount();
+	if (PlayerCountInGame == 0)
 	{
-		// 바로 게임 시작
+		return;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("준비된 플레이어 : %d, 전체 인원 : %d"), ReadyPlayerCount, PlayerCountInGame));
+	if (ReadyPlayerCount >= PlayerCountInGame) 
+	{
+		// 맵 및 캐릭터 로딩시간 가진 이후 게임 시작
 		FTimerHandle StartMainGameTimerHandle;
-		GetWorldTimerManager().SetTimer(StartMainGameTimerHandle, this, &AEPDeathMatchGameMode::StartMainGame, 5.0f, false);
+		GetWorldTimerManager().SetTimer(StartMainGameTimerHandle, this, &AEPDeathMatchGameMode::StartMainGame, 2.0f, false);
 	}
 }
 
@@ -284,4 +285,18 @@ void AEPDeathMatchGameMode::EndMatch()
 			}
 		}
 	}
+}
+
+int32 AEPDeathMatchGameMode::GetLobbyPlayerCount() const
+{
+	int32 LobbyPlayerCount = 0;
+	UEPGameInstance* EPGameInstance = Cast<UEPGameInstance>(GetGameInstance());
+
+	// 게임 인스턴스가 존재한다면 플레이어 카운트를 가져오지만
+	if (EPGameInstance)
+	{
+		LobbyPlayerCount = EPGameInstance->GetPlayerCount();
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("플레이어 수 : %d"), PlayerCountInGame));
+	}
+	return LobbyPlayerCount;
 }

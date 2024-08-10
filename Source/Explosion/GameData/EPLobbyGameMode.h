@@ -47,7 +47,7 @@ private:
 	int32 ReadyPlayerCount;
 	int32 MaxPlayers;
 
-	uint8 bIsSessionCreated : 1;
+	uint8 bIsFirstLoginCompleted : 1;
 
 	FString MainGameMapName;
 };

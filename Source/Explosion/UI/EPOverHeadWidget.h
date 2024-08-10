@@ -16,7 +16,7 @@ public:
 	virtual void NativeConstruct() override;
 	void SetHpBarVisible(bool bVisible);
 	void UpdateHpBar(float NewCurrentHp, float NewMaxHp);
-	void UpdateNameTag(TObjectPtr<APawn> Player);
+	void UpdateNameTag(FString Name);
 	//void UpdateNameTag(const FString& NewName);
 
 protected:

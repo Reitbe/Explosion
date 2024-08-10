@@ -33,10 +33,10 @@ void UEPOverHeadWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)
 //	}
 //}
 
-void UEPOverHeadWidget::UpdateNameTag(TObjectPtr<APawn> Player)
+void UEPOverHeadWidget::UpdateNameTag(FString Name)
 {
 	if (NameTagWidget)
 	{
-		NameTagWidget->ShowPlayerNetRole(Player);
+		NameTagWidget->SetNameTag(Name);
 	}
 }

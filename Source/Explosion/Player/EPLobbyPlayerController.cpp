@@ -140,6 +140,7 @@ void AEPLobbyPlayerController::ClientRPC_UpdateLobbyStatue_Implementation(bool I
 {
 	if (IsLocalController() && StatueManager)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("플컨 - UpdateStatue 호출")));
 		StatueManager->UpdateLobbyStatue(IsOnMainMenu);
 	}
 }

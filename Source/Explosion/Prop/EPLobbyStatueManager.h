@@ -24,4 +24,5 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TArray<TObjectPtr<AActor>> LobbyStatueWithPedestalsArray;
 
+	FTimerHandle GameStateIsReadyTimerHandle;
 };

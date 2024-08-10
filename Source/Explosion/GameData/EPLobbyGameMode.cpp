@@ -50,7 +50,7 @@ AEPLobbyGameMode::AEPLobbyGameMode()
 
 	ReadyPlayerCount = 0;
 	MaxPlayers = 0;
-	bIsSessionCreated = false;
+	bIsFirstLoginCompleted = false;
 
 	bUseSeamlessTravel = false;
 }
@@ -58,8 +58,10 @@ AEPLobbyGameMode::AEPLobbyGameMode()
 void AEPLobbyGameMode::StartPlay()
 {
 	Super::StartPlay();
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("스타트 플레이 시작")));
 	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), LobbyStatueWithPedestalsClass, LobbyStatueWithPedestalsArray);
 
+	bIsFirstLoginCompleted = true;
 	MultiplayerSessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
 	if (MultiplayerSessionSubsystem)
 	{
@@ -67,6 +69,7 @@ void AEPLobbyGameMode::StartPlay()
 		MultiplayerSessionSubsystem->MultiPlayerOnSessionParticipantJoined.AddDynamic(this, &AEPLobbyGameMode::OnSessionParticipantJoined);
 		MultiplayerSessionSubsystem->MultiPlayerOnSessionParticipantLeft.AddDynamic(this, &AEPLobbyGameMode::OnSessionParticipantLeft);
 
+		// 모든 석상이 로드된 이후 최초의 석상 업데이트
 		UpdateLobbyStatue();
 	}
 
@@ -76,14 +79,15 @@ void AEPLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	if (bIsSessionCreated)
+	// 첫 로그인(본인)에 석상이 로드되지 않았으므로 업데이트를 하지 않음
+	if (bIsFirstLoginCompleted) 
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("PostLogin에서 로비 석상 업데이트 호출")));
 		UpdateLobbyStatue();
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("PostLogin이지만 세션 안맏르어져서 호출 안함. 안해서 ")));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("PostLogin이지만 세션 안맏르어져서 호출 안함.")));
 	}
 }
 
@@ -92,7 +96,7 @@ void AEPLobbyGameMode::Logout(AController* Exiting)
 	Super::Logout(Exiting);
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Logout!!")));
 
-	if (bIsSessionCreated)
+	if (bIsFirstLoginCompleted)
 	{
 		UpdateLobbyStatue();
 	}
@@ -100,11 +104,12 @@ void AEPLobbyGameMode::Logout(AController* Exiting)
 
 void AEPLobbyGameMode::OnCreateSessionComplete(bool bWasSuccessful)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("게임모드 세션 컴플맅트 실행.")));
 	if (MultiplayerSessionSubsystem)
 	{
 		MaxPlayers = 0;
 		ReadyPlayerCount = 0;
-		bIsSessionCreated = true;
+		//bIsFirstLoginCompleted = true;
 	}
 }
 

@@ -75,6 +75,9 @@ protected:
 
 // UI
 protected:
+	void SetOverHeadPlayerNameUI();
+
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UWidgetComponent> OverHeadWidgetComponent;
 

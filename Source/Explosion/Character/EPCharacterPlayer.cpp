@@ -158,23 +158,6 @@ void AEPCharacterPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 첫 시작 위치 설정
-	AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
-	if (GameMode)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("트랜스폼 가져오기 실행"));
-		FTransform NewTransform = GameMode->GetRandomStartTransform();
-		TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator());
-		if (TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator()))
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 성공"));
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 실패"));
-		}
-	}
-
 	// 입력 컨텍스트 지정
 	PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController != nullptr)
@@ -194,6 +177,10 @@ void AEPCharacterPlayer::BeginPlay()
 
 	if (HasAuthority())
 	{
+		// 첫 시작 위치 지정
+		FTimerHandle TeleportToFirstSpawnPointTimerHandle;
+		GetWorldTimerManager().SetTimer(TeleportToFirstSpawnPointTimerHandle, this, &AEPCharacterPlayer::TeleportToFirstSpawnPoint, 2.0f, false);
+
 		// 들고 있을 폭탄 스폰 및 소켓에 부착
 		BombInHand = GetWorld()->SpawnActor<AEPBombBase>(BP_Bomb, FTransform::Identity);
 		if (BombInHand)
@@ -240,6 +227,26 @@ float AEPCharacterPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEve
 	Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 	ClientRPC_ShakeCamera();
 	return 0.0f;
+}
+
+void AEPCharacterPlayer::TeleportToFirstSpawnPoint()
+{
+	// 첫 시작 위치 설정
+	AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("트랜스폼 가져오기 실행"));
+		FTransform NewTransform = GameMode->GetRandomStartTransform();
+		TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator());
+		if (TeleportTo(NewTransform.GetLocation(), NewTransform.GetRotation().Rotator()))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 성공"));
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("텔레포트 실패"));
+		}
+	}
 }
 
 
