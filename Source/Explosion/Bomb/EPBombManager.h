@@ -8,32 +8,34 @@
 #include "EPBombManager.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS()
 class EXPLOSION_API UEPBombManager : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
 	UEPBombManager();
 
-protected:
-	virtual void BeginPlay() override;
-
-// Bomb Manager Function Section
 public:
+	/** 주어진 폭탄 종류로 오브젝트 풀 생성 */
 	void MakeBombObjectPool(TSubclassOf<AEPBombBase> BP_Bomb);
 	
+	/** 오브젝트 풀에서 사용 가능한 폭탄을 가져온다 */
 	TObjectPtr<AEPBombBase> TakeBomb();
 
-// Bomb Manager Properties Section
 protected:
+	/** 폭탄들이 담겨있는 오브젝트 풀 */
 	TArray<TObjectPtr<AEPBombBase>> BombList;
 
+	/** 폭탄 오브젝트 풀의 최대 크기 */
 	UPROPERTY(VisibleAnyWhere, Category = "Properties")
 	int32 MaxBombCount;
 
+	/** 현재 사용 가능한 폭탄의 개수 */
 	UPROPERTY(VisibleAnyWhere, Category = "Properties")
 	int32 CurrentBombCount;
+
+protected:
+	virtual void BeginPlay() override;
 
 };

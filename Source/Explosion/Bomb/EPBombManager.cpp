@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ // Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "EPBombManager.h"
@@ -7,14 +7,15 @@
 UEPBombManager::UEPBombManager()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts
 void UEPBombManager::BeginPlay()
 {
 	Super::BeginPlay();
+
 	SetIsReplicated(true);
+	
 	MaxBombCount = 4;
 	CurrentBombCount = 4;
 }
@@ -25,18 +26,17 @@ void UEPBombManager::MakeBombObjectPool(TSubclassOf<AEPBombBase> BP_Bomb)
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		for (int i = 0; i < MaxBombCount; ++i)
+		for (int32 i = 0; i < MaxBombCount; ++i)
 		{
 			AEPBombBase* PoolableBomb = World->SpawnActor<AEPBombBase>(BP_Bomb, FVector().ZeroVector, FRotator().ZeroRotator);
-			PoolableBomb->SetOwner(GetOwner());
 			BombList.Add(PoolableBomb);
+			PoolableBomb->SetOwner(GetOwner()); // 폭탄을 소유한 플레이어로 오너 설정
 		}
 	}
 }
 
 TObjectPtr<AEPBombBase> UEPBombManager::TakeBomb()
 {
-	// 이후 구조 변경 -> 잔여 폭탄 및 전체 폭탄 수량 체크
 	for (TObjectPtr<AEPBombBase> Bomb : BombList)
 	{
 		if (!Bomb->GetIsBombActive())
@@ -49,4 +49,3 @@ TObjectPtr<AEPBombBase> UEPBombManager::TakeBomb()
 	return nullptr;
 }
 
-// 자동 추가 기능은 이후 추가
