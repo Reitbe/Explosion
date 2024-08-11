@@ -199,10 +199,10 @@ void AEPDeathMatchGameMode::CheckAllPlayersReady()
 	++ReadyPlayerCount;
 
 	PlayerCountInGame = GetLobbyPlayerCount();
-	if (PlayerCountInGame == 0)
-	{
-		return;
-	}
+	//if (PlayerCountInGame == 0)
+	//{
+	//	return;
+	//}
 
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("준비된 플레이어 : %d, 전체 인원 : %d"), ReadyPlayerCount, PlayerCountInGame));
 	if (ReadyPlayerCount >= PlayerCountInGame) 
