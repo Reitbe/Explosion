@@ -10,17 +10,16 @@
 #include "Components/ChildActorComponent.h"
 #include "Explosion/UI/EPNameTagWidget.h"
 
-// Sets default values
 AEPLobbyStatue::AEPLobbyStatue()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	// 루트 컴포넌트
+	// 루트 컴포넌트 지정
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
 	CapsuleComponent->SetCollisionProfileName(TEXT("NoCollision"));
 	RootComponent = CapsuleComponent;
 
-	// 추가될 캐릭터
+	// 캐릭터를 액터에 추가하기 위한 설정
 	ChildActorComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("ChildActorComponent"));
 	ChildActorComponent->SetupAttachment(RootComponent);
 	
@@ -35,6 +34,7 @@ AEPLobbyStatue::AEPLobbyStatue()
 	// 캐릭터가 서있을 기단
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StatuePedestal"));
 	StaticMeshComponent->SetupAttachment(RootComponent);
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> StatuePedestalFinder
 	(TEXT("/Game/PolygonAncientEmpire/Meshes/Props/SM_Prop_Plinth_05.SM_Prop_Plinth_05"));
 	if (StatuePedestalFinder.Succeeded())
@@ -82,13 +82,12 @@ void AEPLobbyStatue::SetNameTag(FString Name)
 	}
 }
 
-// Called when the game starts or when spawned
+
 void AEPLobbyStatue::BeginPlay()
 {
 	Super::BeginPlay();
 	SetReplicates(true);
 
-	// OverHeadWidget 초기화
 	NameTagWidget = Cast<UEPNameTagWidget>(WidgetComponent->GetUserWidgetObject());
 	if (NameTagWidget)
 	{
@@ -96,6 +95,5 @@ void AEPLobbyStatue::BeginPlay()
 	}
 
 	SetVisibility(false);
-	//SetActorHiddenInGame(true); // 매니저가 인식을 할 수 없다.
 }
 
