@@ -27,8 +27,7 @@ void UEPGameMenuWidget::NativeConstruct()
 
 void UEPGameMenuWidget::OnReturnToGameButtonClicked()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("다시 게임으로 갑시다"));
-	AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetOwningLocalPlayer()->GetPlayerController(GetWorld()));
+	AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetGameInstance()->GetFirstLocalPlayerController());
 	if (EPPlayerController)
 	{
 		EPPlayerController->HideGameMenu();
@@ -37,10 +36,10 @@ void UEPGameMenuWidget::OnReturnToGameButtonClicked()
 
 void UEPGameMenuWidget::OnReturnToLobbyButtonClicked()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("로비로 갑시다"));
 	UEPMultiplayerSessionSubsystem* MultiplayerSessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
 	if (MultiplayerSessionSubsystem)
 	{
+		// 메인 메뉴로 돌아가는 경우 세션 파괴
 		MultiplayerSessionSubsystem->DestroySession();
 		UGameplayStatics::OpenLevel(GetWorld(), *LevelPath);
 	}

@@ -2,8 +2,8 @@
 
 
 #include "EPHpBarWidget.h"
-#include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 
 
 void UEPHpBarWidget::NativeConstruct()

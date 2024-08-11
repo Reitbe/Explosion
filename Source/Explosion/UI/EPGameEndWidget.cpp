@@ -18,8 +18,6 @@ void UEPGameEndWidget::NativeConstruct()
 
 void UEPGameEndWidget::OnReturnToLobbyButtonClicked()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Return to lobby button clicked"));
-
 	UEPMultiplayerSessionSubsystem* MultiplayerSessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
 	if (MultiplayerSessionSubsystem)
 	{

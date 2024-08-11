@@ -23,3 +23,4 @@ void UEPBasicTextWidget::SetTextColorAndOpacity(FLinearColor NewColorAndOpacity)
 		BasicTextBlock->SetColorAndOpacity(NewColorAndOpacity);
 	}
 }
+

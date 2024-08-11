@@ -8,7 +8,6 @@
 #include "Explosion/GameData/EPMultiplayerSessionSubsystem.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
-
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 
@@ -18,11 +17,6 @@ void UEPMainMenuWidget::NativeConstruct()
 	{
 		PlayGameButton->OnClicked.AddDynamic(this, &UEPMainMenuWidget::OnPlayGameButtonClicked);
 	}
-
-	//if(SettingsButton)
-	//{
-	//	SettingsButton->OnClicked.AddDynamic(this, &UEPMainMenuWidget::OnSettingsButtonClicked);
-	//}
 
 	if(ExitGameButton)
 	{
@@ -42,6 +36,7 @@ void UEPMainMenuWidget::NativeConstruct()
 
 void UEPMainMenuWidget::OnPlayGameButtonClicked()
 {
+	// 게임 플레이 버튼을 눌러야 세션의 생성과 탐색 위젯이 나타난다.
 	if (CreateSessionWidget && FindSessionWidget)
 	{
 		if(CreateSessionWidget->GetVisibility() == ESlateVisibility::Collapsed && FindSessionWidget->GetVisibility() == ESlateVisibility::Collapsed)
@@ -57,22 +52,10 @@ void UEPMainMenuWidget::OnPlayGameButtonClicked()
 	}
 }
 
-//void UEPMainMenuWidget::OnSettingsButtonClicked()
-//{
-//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("세팅버튼 눌림"));
-//
-//	const IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-//	if (OnlineSub)
-//	{
-//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("서브시스템 : %s"), *OnlineSub->GetSubsystemName().ToString()));
-//	}
-//
-//}
 
 void UEPMainMenuWidget::OnExitGameButtonClicked()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("종료버튼 눌림"));
-
+	// 게임 프로그램 종료
 	TEnumAsByte<EQuitPreference::Type> QuitPreference = EQuitPreference::Quit; 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	UKismetSystemLibrary::QuitGame(GetWorld(), PlayerController, QuitPreference, true);

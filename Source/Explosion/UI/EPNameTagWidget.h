@@ -6,6 +6,10 @@
 #include "Blueprint/UserWidget.h"
 #include "EPNameTagWidget.generated.h"
 
+/**
+ * 플레이어의 이름을 표시하는 단순한 이름표 위젯
+ */
+
 UCLASS()
 class EXPLOSION_API UEPNameTagWidget : public UUserWidget
 {
@@ -16,8 +20,6 @@ public:
 
 public:
 	void SetNameTag(FString Name);
-	//임시로 네트워크 상에서 플레이어의 역할을 나타낸다
-	void ShowPlayerNetRole(TObjectPtr<APawn> Player);
 
 protected:
 	UPROPERTY(meta = (BindWidget))
