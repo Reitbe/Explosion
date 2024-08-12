@@ -7,6 +7,17 @@
 #include "Explosion/EPCharacterStat.h"
 #include "EPItemBase.generated.h"
 
+class UStaticMeshComponent;
+class UCapsuleComponent;
+class UParticleSystemComponent;
+
+/*
+* 모든 아이템들의 기본이 되는 클래스. 
+* 캡슐 콜라이더와 충돌했을 때 아이템 효과가 발동된다.
+* 지금은 체력 회복 타입만 구현되어 있다.
+*/
+
+/* 아이템 타입 구분을 위한 enum */
 UENUM(BlueprintType)
 enum class EItemType : uint8
 {
@@ -19,12 +30,9 @@ class EXPLOSION_API AEPItemBase : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AEPItemBase();
 	
-
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
 
@@ -51,6 +59,8 @@ protected:
 
 public:
 	EItemType Type;
+
+	/* 아이템이 가지는 스탯. 캐릭터에 적용하기 쉽도록 캐릭터의 스탯과 동일한 타입을 사용. */
 	FEPCharacterStat ItemStat;
 
 };
