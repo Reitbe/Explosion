@@ -12,6 +12,7 @@
 
 UEPScoreBoardWidget::UEPScoreBoardWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
+	// 플레이어의 정보를 출력할 내부 위젯 로드
 	static ConstructorHelpers::FClassFinder<UEPBasicTextWidget> TextBlockWidgetClassFinder
 	(TEXT("/Game/UI/WBP_PlayerScoreWidget.WBP_PlayerScoreWidget_C"));
 	if (TextBlockWidgetClassFinder.Class)
@@ -23,12 +24,14 @@ UEPScoreBoardWidget::UEPScoreBoardWidget(const FObjectInitializer& ObjectInitial
 void UEPScoreBoardWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	//UpdateScoreBoard();
 }
 
 void UEPScoreBoardWidget::UpdateScoreBoard()
 {
+	// GameState의 ScoreBoard에는 각 플레이어의 PlayerState와 Score가 있으며, Score가 높은 순서대로 정렬되어있다.
 	TArray<FScoreBoard> &SB = GetWorld()->GetGameState<AEPGameState>()->ScoreBoard;
+
+	// 정보를 담을 위젯들을 플레이어 수에 맞게 조정한다.
 	ResizeScoreBoard(SB.Num());
 
 	for (int32 i = 0; i < SB.Num(); ++i)
@@ -49,17 +52,19 @@ void UEPScoreBoardWidget::UpdateScoreBoard()
 	}
 }
 
-void UEPScoreBoardWidget::ResizeScoreBoard(int32 scoreBoardSize)
+void UEPScoreBoardWidget::ResizeScoreBoard(int32 PlayerCountInGame)
 {
-	while (scoreBoardSize != PlayerScoreWidgets.Num())
+	while (PlayerCountInGame != PlayerScoreWidgets.Num())
 	{
-		if (scoreBoardSize > PlayerScoreWidgets.Num())
+		// 게임에 참가한 플레이어가 현재 점수 위젯 블럭의 수보다 많은 경우, 위젯을 추가한다.
+		if (PlayerCountInGame > PlayerScoreWidgets.Num())
 		{
 			UEPBasicTextWidget* PlayerScoreWidget = CreateWidget<UEPBasicTextWidget>(GetWorld(), PlayerScoreWidgetClass);
 			PlayerScoreWidgets.Add(PlayerScoreWidget);
 			PlayerScoreVerticalBox->AddChild(PlayerScoreWidget);
 		}
-		else if (scoreBoardSize < PlayerScoreWidgets.Num())
+		// 게임에 참가한 플레이어가 현재 점수 위젯 블럭의 수보다 적은 경우, 위젯을 제거한다.
+		else if (PlayerCountInGame < PlayerScoreWidgets.Num())
 		{
 			int32 LastIndex = PlayerScoreWidgets.Num() - 1;
 			PlayerScoreVerticalBox->RemoveChild(PlayerScoreWidgets[LastIndex]);

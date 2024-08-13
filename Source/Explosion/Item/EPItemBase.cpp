@@ -8,13 +8,13 @@
 #include "Explosion/Interface/EPCharacterItemInterface.h"
 #include "Particles/ParticleSystemComponent.h"
 
-// Sets default values
 AEPItemBase::AEPItemBase()
 {
-
  	ItemMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMeshComponent"));
 	ItemBaseMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemBaseMeshComponent"));
+	
 	CapsuleTriggerComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleTriggerComponent"));
+	
 	OverlapEffectComponent = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleComponent"));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ItemBaseMeshFinder
@@ -46,7 +46,6 @@ AEPItemBase::AEPItemBase()
 
 }
 
-// Called when the game starts or when spawned
 void AEPItemBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -62,6 +61,7 @@ void AEPItemBase::PostInitializeComponents()
 
 void AEPItemBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepHitResult)
 {
+	// 충돌이 발생한 캐릭터의 TakeItem 함수 호출
 	IEPCharacterItemInterface* OverlappedPlayer = Cast<IEPCharacterItemInterface>(OtherActor);
 	if (OverlappedPlayer)
 	{

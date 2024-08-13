@@ -8,9 +8,9 @@ void UAnimNotify_ThrowingBomb::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 
-	AEPCharacterBase* Character = Cast<AEPCharacterBase>(MeshComp->GetOwner());
-	if (Character)
+	AEPCharacterBase* EPCharacter = Cast<AEPCharacterBase>(MeshComp->GetOwner());
+	if (EPCharacter)
 	{
-		Character->OnThrowingBombDelegate.Execute();
+		EPCharacter->OnThrowingBombDelegate.Execute();
 	}
 }

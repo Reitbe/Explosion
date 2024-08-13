@@ -6,23 +6,19 @@
 #include "GameFramework/Character.h"
 #include "EPLobbyCharacter.generated.h"
 
+/*
+* 로비 캐릭터는 메인화면과 로비에서 사용되는 기본 캐릭터이다.
+* UI 상호작용 이외에 특별한 기능을 가지지 않으며 이동이 불가능하다.
+*/
 UCLASS()
 class EXPLOSION_API AEPLobbyCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AEPLobbyCharacter();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-
 
 };

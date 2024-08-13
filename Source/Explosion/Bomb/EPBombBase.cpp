@@ -10,7 +10,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
-// Sets default values
+
 AEPBombBase::AEPBombBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -26,8 +26,6 @@ AEPBombBase::AEPBombBase()
 	BombMeshComponent->SetIsReplicated(true);
 	BombMeshComponent->SetSimulatePhysics(false);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	BombMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("BombMovementComponent"));
 
 	BombAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("BombAudioComponent"));
 	BombAudioComponent->SetupAttachment(RootComponent);
@@ -51,7 +49,6 @@ void AEPBombBase::ActiveBomb()
 {
 	SetActorHiddenInGame(false);
 	SetActorTickEnabled(true);
-	//SetActorEnableCollision(true);
 	BombMeshComponent->SetSimulatePhysics(true);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	bIsBombActive = true;
@@ -61,7 +58,6 @@ void AEPBombBase::DeactiveBomb()
 {
 	SetActorHiddenInGame(true);
 	SetActorTickEnabled(false);
-	//SetActorEnableCollision(false);
 	BombMeshComponent->SetSimulatePhysics(false);
 	BombMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	bIsBombActive = false;
@@ -80,14 +76,17 @@ void AEPBombBase::ActiveBombTimeTrigger()
 {
 	if (HasAuthority())
 	{
-		FTimerHandle DestroyTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, this, &AEPBombBase::MulticastRPCExplode, BombDelayTime, false);
+		FTimerHandle BombExplosionTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(BombExplosionTimerHandle, this, &AEPBombBase::MulticastRPCExplode, BombDelayTime, false);
 	}
 }
 
 void AEPBombBase::MulticastRPCExplode_Implementation()
 {
+	// 모든 클라이언트에서 폭발 이펙트 생성
 	BombGamePlayStatics->SpawnEmitterAtLocation(GetWorld(), BombParticleSystem, GetActorLocation());
+
+	// 서버는 폭발 데미지까지 처리
 	if (HasAuthority())
 	{
 		DeactiveBomb();

@@ -10,11 +10,11 @@
 void AEPGameState::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
 	KillScoreMultiplier = 10;
+
 	bIsSetupEndMatch = false;
 
-	// 게임모드에 있어야할 종료 조건이지만 임시로 여기 두다.->타이머 UI를 위해
-	// 이거 게임모드에서 얻어와서 
 	MatchScoreLimit = 30;
 	MatchTimeLimit = 120.0f;
 }
@@ -43,18 +43,14 @@ void AEPGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 
 void AEPGameState::OnRep_PostUpdateScoreBoard()
 {
-	SetIsScoreBoardReplicated(true);
-
 	AEPPlayerController* PlayerController = Cast<AEPPlayerController>(GetWorld()->GetFirstPlayerController());
-	//PlayerController->ClientRPCUpdateScoreBoard();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ScoreBoard Updated"));
 	PlayerController->UpdateScoreBoard();
 }
 
 
 void AEPGameState::UpdateScoreBoard(TObjectPtr<AEPPlayerState> KillerGameState)
 {
-	// ScoreBoard에서 가진 플레이어 스테이트가 이거랑 맞는지 확인 -> 맞으면 업데이트.
+	// 점수 변경이 필요한 플레이어를 찾아서 점수를 업데이트하고 점수가 높은 순서대로 정렬한다. 
 	for (auto& PlyserScoreStruct : ScoreBoard)
 	{
 		if (PlyserScoreStruct.PlayerState == KillerGameState)

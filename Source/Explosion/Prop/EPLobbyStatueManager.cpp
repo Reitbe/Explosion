@@ -7,7 +7,6 @@
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
 
-// Sets default values for this component's properties
 UEPLobbyStatueManager::UEPLobbyStatueManager()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -23,7 +22,6 @@ UEPLobbyStatueManager::UEPLobbyStatueManager()
 void UEPLobbyStatueManager::GetAllLobbyStatue()
 {
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), LobbyStatueWithPedestalsClass, LobbyStatueWithPedestalsArray);
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("플컨-매니저 석상 갯수 : %d"), LobbyStatueWithPedestalsArray.Num()));
 }
 
 void UEPLobbyStatueManager::UpdateLobbyStatue(bool IsOnMainMenu)
@@ -31,64 +29,56 @@ void UEPLobbyStatueManager::UpdateLobbyStatue(bool IsOnMainMenu)
 	// 메인메뉴인 경우 석상 전체 비활성화
 	if (IsOnMainMenu)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("메인메뉴 - 석상 전체 비활성화!!")));
 		for (int32 i = 0; i < LobbyStatueWithPedestalsArray.Num(); ++i)
 		{
 			AEPLobbyStatue* LobbyStatue = Cast<AEPLobbyStatue>(LobbyStatueWithPedestalsArray[i]);
 			if (LobbyStatue)
 			{
 				LobbyStatue->SetVisibility(false);
-				//LobbyStatue->SetActorHiddenInGame(true);
 			}
 		}
 	}
-	// 로비인 경우 석상 활성화 여부 갱신
+	// 로비인 경우 석상 활성화 업데이트
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("로비 석상 비활성화 시작")));
-
+		// 매치에 참가한 플레이어 목록을 저장할 배열
 		TArray<TObjectPtr<APlayerState>> PlayerArray;
 
-		// 게임 스테이트 가져오기
+		// 게임 스테이트가 생성될 때 까지 반복적으로 접근
 		if (GetWorld()->GetGameState<AGameState>() == nullptr)
 		{
-			// 없다면 1초 후에 다시 시도
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("게임스테이트가 없다.")));
 			GetWorld()->GetTimerManager().SetTimer(GameStateIsReadyTimerHandle, FTimerDelegate::CreateLambda(
 				[this]() { UpdateLobbyStatue(false); }
 			)
 			, 0.1f, false, -1.0f);
 			return;
 		}
+		// 게임 스테이트가 존재한다면 플레이어 목록을 가져온다
 		else
 		{
 			PlayerArray = GetWorld()->GetGameState<AGameState>()->PlayerArray;
 		}
 
-		// 플레이어가 석상보다 많은 경우
+		// 석상 인식이 되지 않은 경우이다. 석상은 4개 고정이며 플레이어는 4명이하로 제한되어있기 때문에 플레이어가 석상보다 많을 수 없다. 
 		if (PlayerArray.Num() > LobbyStatueWithPedestalsArray.Num())
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("플레이어가 석상보다 많다. 플레이어:%d, 석상:%d"), PlayerArray.Num(), LobbyStatueWithPedestalsArray.Num()));
 			return;
 		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("플레이어:%d, 석상:%d"), PlayerArray.Num(), LobbyStatueWithPedestalsArray.Num()));
-		}
 
-		int32 idx = 0;
-		// 로비 석상 활성화
-		for (; idx < PlayerArray.Num(); ++idx)
+		// 석상 번호를 표현하기 위한 인덱스
+		int32 StatueIndex = 0;
+		
+		// 플레이어 수 만큼 석상 활성화
+		for (; StatueIndex < PlayerArray.Num(); ++StatueIndex)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("플레이어 석상 활성화!! idx : %d "), idx));
-			APlayerState* PlayerState = Cast<APlayerState>(PlayerArray[idx]);
+			APlayerState* PlayerState = Cast<APlayerState>(PlayerArray[StatueIndex]);
 			FString PlayerName = "";
 			if (PlayerState)
 			{
 				PlayerName = PlayerState->GetPlayerName();
 			}
 
-			AEPLobbyStatue* LobbyStatueWithPedestal = Cast<AEPLobbyStatue>(LobbyStatueWithPedestalsArray[idx]);
+			AEPLobbyStatue* LobbyStatueWithPedestal = Cast<AEPLobbyStatue>(LobbyStatueWithPedestalsArray[StatueIndex]);
 			if (LobbyStatueWithPedestal)
 			{
 				LobbyStatueWithPedestal->SetVisibility(true);
@@ -96,11 +86,10 @@ void UEPLobbyStatueManager::UpdateLobbyStatue(bool IsOnMainMenu)
 			}
 		}
 
-		// 잔여 로비 석상 비활성화 
-		for (; idx < LobbyStatueWithPedestalsArray.Num(); ++idx)
+		// 잔여 석상 비활성화 
+		for (; StatueIndex < LobbyStatueWithPedestalsArray.Num(); ++StatueIndex)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("잔여 석상 비활성화중 idx : %d "), idx));
-			AEPLobbyStatue* LobbyStatueWithPedestal = Cast<AEPLobbyStatue>(LobbyStatueWithPedestalsArray[idx]);
+			AEPLobbyStatue* LobbyStatueWithPedestal = Cast<AEPLobbyStatue>(LobbyStatueWithPedestalsArray[StatueIndex]);
 			if (LobbyStatueWithPedestal)
 			{
 				LobbyStatueWithPedestal->SetVisibility(false);

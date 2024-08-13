@@ -12,8 +12,6 @@
 #include "Explosion/Player/EPPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
-#include "Explosion/Explosion.h"
-// EP_LOG(LogExplosion, Log, TEXT("%s"), TEXT("전체 다 몽타주를 재생"));
 
 
 AEPCharacterBase::AEPCharacterBase()
@@ -33,7 +31,6 @@ AEPCharacterBase::AEPCharacterBase()
 	// Mesh 설정
 	GetMesh() ->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
-	//GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
 	// Bomb Manager 설정
@@ -42,11 +39,12 @@ AEPCharacterBase::AEPCharacterBase()
 	// Stat 설정
 	StatComponent = CreateDefaultSubobject<UEPCharacterStatComponent>(TEXT("StatComponent"));
 
-	// 캐릭터 상단 UI 설정
+	// 캐릭터 상단 UI 컴포넌트 설정
 	OverHeadWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverHeadWidgetComponent"));
 	OverHeadWidgetComponent->SetupAttachment(GetMesh());
 	OverHeadWidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 250.0f));
 
+	// 캐릭터 상단 UI 설정
 	static ConstructorHelpers::FClassFinder<UUserWidget> NameTagWidgetFinder
 	(TEXT("/Game/UI/WBP_OverHeadWidget.WBP_OverHeadWidget_C"));
 	if (NameTagWidgetFinder.Class)
@@ -57,6 +55,7 @@ AEPCharacterBase::AEPCharacterBase()
 		OverHeadWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 
+	// 플레이어 HP, 타이머, 차징 바가 표시되는 HUD 위젯 설정
 	static ConstructorHelpers::FClassFinder<UUserWidget> HUDWidgetFinder
 	(TEXT("/Game/UI/WBP_HUDWidget.WBP_HUDWidget_C"));
 	if (HUDWidgetFinder.Class)
@@ -65,18 +64,12 @@ AEPCharacterBase::AEPCharacterBase()
 	}
 }
 
-void AEPCharacterBase::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
-	// 게임 인스턴스로부터 정보 가져오기.
-	//StatComponent->SetBaseStat();
-}
 
-// Called when the game starts or when spawned
 void AEPCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	// BombManager 초기화	
+	
+	// 폭탄 오브젝트 풀을 관리하는 매니저 초기화
 	if (HasAuthority())
 	{
 		BombManager->MakeBombObjectPool(BP_Bomb);
@@ -87,19 +80,18 @@ void AEPCharacterBase::BeginPlay()
 		}
 	}
 
-	// OverHeadWidget 초기화
+	// 플레이어 캐릭터 상단에 표시될 UI 초기화
 	OverHeadWidget = Cast<UEPOverHeadWidget>(OverHeadWidgetComponent->GetUserWidgetObject());
 	if (OverHeadWidget)
 	{
-		// 플레이어 정보가 준비되는 것을 기다리는 2초
+		// PlayerState가 생성되기 전에는 이름이 표시되지 않으므로 2초 뒤에 이름을 표시하도록 타이머 설정
 		FTimerHandle CharacterPlayerBeginPlayTimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(CharacterPlayerBeginPlayTimerHandle, this, &AEPCharacterBase::SetOverHeadPlayerNameUI, 2.0f, false, -1.0f);
 		
-		// 로컬 플레이어인 경우에는 오버헤드 위젯을 숨김
+		// 로컬 플레이어인 경우에는 오버헤드 위젯을 숨김(본인 체력은 HUD에 표시)
 		if (IsLocallyControlled()) 
 		{
 			OverHeadWidget->SetVisibility(ESlateVisibility::Collapsed);
-			//OverHeadWidget->SetHpBarVisible(false);
 		}
 		else
 		{
@@ -108,7 +100,8 @@ void AEPCharacterBase::BeginPlay()
 		}
 	}
 
-	if (HUDWidgetClass && IsLocallyControlled())
+	// HUD 위젯 초기화
+	if (IsLocallyControlled() && HUDWidgetClass)
 	{
 		HUDWidget = CreateWidget<UEPHUDWidget>(GetWorld(), HUDWidgetClass);
 		if (HUDWidget)
@@ -119,7 +112,7 @@ void AEPCharacterBase::BeginPlay()
 		}
 	}
 
-	// 모든 준비가 완료되었음을 서버에 알림
+	// 캐릭터의 모든 준비가 완료되었음을 서버에 알림
 	if (IsLocallyControlled())
 	{
 		AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetController());
@@ -127,16 +120,13 @@ void AEPCharacterBase::BeginPlay()
 		{
 			EPPlayerController->OnStartMainGame.AddUObject(this, &AEPCharacterBase::StartMainGame);
 		}
-		ServerRPC_PlayerReady();
+		ServerRPCPlayerReady();
 	}
 
+	// 게임이 시작되기 전에는 입력 비활성화 유지
 	DisableInput(GetWorld()->GetFirstPlayerController());
-	// Delegate 설정
-	//StatComponent->OnHpZero.AddUObject(this, &AEPCharacterBase::SetDead);
-	StatComponent->OnHpChanged.AddUObject(this, &AEPCharacterBase::TempSetDamaged);
 }
 
-// Called every frame
 void AEPCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -155,10 +145,6 @@ void AEPCharacterBase::SetDead()
 {
 }
 
-void AEPCharacterBase::TempSetDamaged(float CurrentHp, float MaxHp)
-{
-	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("CurrentHp : %f, MaxHp : %f"), CurrentHp, MaxHp));
-}
 
 float AEPCharacterBase::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
@@ -167,12 +153,6 @@ float AEPCharacterBase::TakeDamage(float Damage, FDamageEvent const& DamageEvent
 	AController* EventCauser = GetController();
 	StatComponent->TakeDamage(Damage, EventCauser, EventInstigator, DamageCauser);
 
-	//AEPDeathMatchGameMode* GameMode = Cast<AEPDeathMatchGameMode>(GetWorld()->GetAuthGameMode());
-	//if (GameMode)
-	//{
-	//	AController* KilledPlayer = GetController();
-	//	GameMode->OnPlayerKilled(EventInstigator, KilledPlayer, );
-	//}
 	return 0.0f;
 }
 
@@ -204,23 +184,23 @@ void AEPCharacterBase::SetOverHeadPlayerNameUI()
 	{
 		PlayerName = EPPlayerState->GetPlayerName();
 	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("플레이어 스테이트가 없습니다.")));
-	}
-	OverHeadWidget->UpdateNameTag(PlayerName);
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("캐플 BeginPlay - 플레이어 이름 : %s"), *PlayerName));
 
+	if (OverHeadWidget)
+	{
+		OverHeadWidget->UpdateNameTag(PlayerName);
+	}
 }
 
-void AEPCharacterBase::ServerRPC_PlayerReady_Implementation()
+void AEPCharacterBase::ServerRPCPlayerReady_Implementation()
 {
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
-	AEPDeathMatchGameMode* EPGameMode = Cast<AEPDeathMatchGameMode>(GameMode);
-	if (EPGameMode)
+	if (GameMode)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("캐릭터고 서버에 준비 신호 보낸다.")));
-		EPGameMode->CheckAllPlayersReady();
+		AEPDeathMatchGameMode* EPGameMode = Cast<AEPDeathMatchGameMode>(GameMode);
+		if (EPGameMode)
+		{
+			EPGameMode->CheckAllPlayersReady();
+		}
 	}
 }
 

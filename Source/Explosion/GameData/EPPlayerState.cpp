@@ -19,24 +19,14 @@ void AEPPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void AEPPlayerState::OnRep_UpdateKillCount()
 {
-	SetIsKillCountReplicated(true);
-
-	AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetWorld()->GetFirstPlayerController());
-	//EPPlayerController->ClientRPCUpdateScoreBoard();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("KillCount Updated"));
+	AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetGameInstance()->GetFirstLocalPlayerController());
 	EPPlayerController->UpdateScoreBoard();
 }
 
 void AEPPlayerState::OnRep_UpdateDeathCount()
 {
-	SetIsDeathCountReplicated(true);
-
-	AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetWorld()->GetFirstPlayerController());
-	//EPPlayerController->ClientRPCUpdateScoreBoard();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("DeathCount Updated"));
+	AEPPlayerController* EPPlayerController = Cast<AEPPlayerController>(GetGameInstance()->GetFirstLocalPlayerController());
 	EPPlayerController->UpdateScoreBoard();
 }
 
-//FString AEPPlayerState::GetPlayerNameCustom() const
-//{
-//}
+

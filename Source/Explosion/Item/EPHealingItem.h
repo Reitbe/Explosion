@@ -7,8 +7,9 @@
 #include "EPHealingItem.generated.h"
 
 /**
- * 
+ * 체력 회복 아이템
  */
+
 UCLASS()
 class EXPLOSION_API AEPHealingItem : public AEPItemBase
 {

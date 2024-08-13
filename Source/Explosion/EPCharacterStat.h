@@ -6,6 +6,11 @@
 #include "Engine/DataTable.h"
 #include "EPCharacterStat.generated.h"
 
+/**
+ * 캐릭터의 스탯을 저장하는 구조체. 
+ * 데이터테이블의 기본 Row로 사용된다.
+ */
+
 USTRUCT(BlueprintType)
 struct FEPCharacterStat : public FTableRowBase
 {
@@ -16,20 +21,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
 	float MaxHp;
-
-	//FEPCharacterStat operator+(const FEPCharacterStat& Other) const
-	//{
-	//	const float* const ThisPtr = reinterpret_cast<const float* const>(this);
-	//	const float* const OtherPtr = reinterpret_cast<const float* const>(&Other);
-
-	//	FEPCharacterStat Result;
-	//	float* ResultPtr = reinterpret_cast<float*>(&Result);
-	//	int32 StatNum = sizeof(FEPCharacterStat) / sizeof(float);
-	//	for (int32 i = 0; i < StatNum; i++)
-	//	{
-	//		ResultPtr[i] = ThisPtr[i] + OtherPtr[i];
-	//	}
-
-	//	return Result;
-	//}
 };

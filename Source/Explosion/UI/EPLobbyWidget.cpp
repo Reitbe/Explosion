@@ -51,10 +51,11 @@ void UEPLobbyWidget::OnReadyButtonClicked()
 void UEPLobbyWidget::OnReturnToMainButtonClicked()
 {
 	ReadyButton->SetIsEnabled(true);
+	
+	// 세션에 참가했기에 로비에 있을 수 있다. 나가기 위해서 세션 파괴.
 	if (MultiplayerSessionSubsystem)
 	{
 		MultiplayerSessionSubsystem->DestroySession();
-		
 	}
 }
 
@@ -62,5 +63,4 @@ void UEPLobbyWidget::OnDestroySessionComplete(bool WasSuccessful)
 {
 	UGameplayStatics::OpenLevel(GetWorld(), *LevelPath);
 	FString SessionState = MultiplayerSessionSubsystem->GetSessionState();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Destroy 직후 SessionState: %s"), *SessionState));
 }

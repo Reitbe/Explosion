@@ -5,8 +5,6 @@
 
 AEPHealingItem::AEPHealingItem()
 {
-	Type = EItemType::IT_Health;
-	ItemStat.MaxHp = HealingAmount;
 }
 
 void AEPHealingItem::PostInitializeComponents()

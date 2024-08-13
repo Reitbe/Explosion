@@ -6,7 +6,9 @@
 #include "UObject/Interface.h"
 #include "EPGameModeInterface.generated.h"
 
-// This class does not need to be modified.
+class AController;
+class AActor;
+
 UINTERFACE(MinimalAPI)
 class UEPGameModeInterface : public UInterface
 {
@@ -14,14 +16,17 @@ class UEPGameModeInterface : public UInterface
 };
 
 /**
- * 
+ * 게임모드가 구현해야 하는 필수 함수들을 정의한 인터페이스.
+ * 실험적으로 2개의 기능만을 정의했다.
  */
 class EXPLOSION_API IEPGameModeInterface
 {
 	GENERATED_BODY()
 
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+	/* 플레이어가 부활할 장소를 랜덤하게 제공한다 */
 	virtual FTransform GetRandomStartTransform() = 0;
-	virtual void OnPlayerKilled(class AController* KillerPlayer, class AController* KilledPlayer, class AActor* DamageCauser) = 0;
+
+	/* 플레이어 사망 시 처리 */
+	virtual void OnPlayerKilled(AController* KillerPlayer, AController* KilledPlayer, AActor* DamageCauser) = 0;
 };

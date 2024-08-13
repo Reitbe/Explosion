@@ -25,14 +25,6 @@ void UEPOverHeadWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)
 	}
 }
 
-//void UEPOverHeadWidget::UpdateNameTag(const FString& NewName)
-//{
-//	if (NameTagWidget)
-//	{
-//		NameTagWidget->SetNameTag(NewName);
-//	}
-//}
-
 void UEPOverHeadWidget::UpdateNameTag(FString Name)
 {
 	if (NameTagWidget)

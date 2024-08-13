@@ -21,15 +21,16 @@ void UEPSessionBlockWidget::NativeConstruct()
 
 }
 
-void UEPSessionBlockWidget::SetSessionFindResult(const FOnlineSessionSearchResult& SessionResult)
+void UEPSessionBlockWidget::ExtractSessionFindResult(const FOnlineSessionSearchResult& SessionResult)
 {
 	SessionFindResult = SessionResult;
-
-	int32 ConnectionCount = SessionResult.Session.NumOpenPublicConnections;
+	// 현재 세션에 접속 중인 플레이어 수
+	int32 ConnectionCount = SessionResult.Session.NumOpenPublicConnections; 
+	// 세션에 접속 가능한 최대 플레이어 수
 	int32 MaxConnectionCount = SessionResult.Session.SessionSettings.NumPublicConnections;
-	
-	//FString SessionName = SessionResult.Session.GetSessionIdStr();
+	// 세션을 만든 유저 이름
 	FString OwingUserName = SessionResult.Session.OwningUserName;
+
 	FString PlayerCount = FString::Printf(TEXT("%02d/%02d"), ConnectionCount, MaxConnectionCount);
 	FString Ping = FString::Printf(TEXT("%d"), SessionResult.PingInMs);
 
@@ -70,20 +71,19 @@ void UEPSessionBlockWidget::OnJoinSessionComplete(EOnJoinSessionCompleteResult::
 	{
 		if (Result == EOnJoinSessionCompleteResult::Success)
 		{
+			// 세션 이름을 사용하여 원하는 세션을 찾고, 그 주소를 가져온다.
 			FString Address;
 			SessionInterface->GetResolvedConnectString(NAME_GameSession, Address);
 
 			APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
 			if (PlayerController)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("조인세션 했고 트래블 간다!! : %s"), *Address));
 				PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 			}
 		}
-		else
+		// 세션 침가 실패
+		else 
 		{
-			// 세션에 조인 실패
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("조인세션 실패함")));
 			JoinSessionButton->SetIsEnabled(true);
 		}
 	}

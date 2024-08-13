@@ -12,6 +12,7 @@ void UEPTimerWidget::NativeConstruct()
 
 	float ServerTime = 0.0f;
 	float LimitTime = 0.0f;
+
 	ULocalPlayer* LocalPlayer = GetOwningLocalPlayer();
 	if (LocalPlayer)
 	{
@@ -20,26 +21,29 @@ void UEPTimerWidget::NativeConstruct()
 		if (EPPlayerController)
 		{
 			ServerTime = EPPlayerController->GetServerTime();
+
+			// 서버로부터 플레이어 컨트롤러에 매치 종료가 전달되면 타이머 진행을 멈춘다.
 			EPPlayerController->OnSetupEndMatch.AddUObject(this, &UEPTimerWidget::StopTimeDisplay);
 		}
 
-		//게임 스테이트에서 시간 제한을 가져온다.
+		//게임 스테이트에서 매치에 배정된 시간을 가져온다.
 		EPGameState = GetWorld()->GetGameState<AEPGameState>();
 		if (EPGameState)
 		{
 			LimitTime = EPGameState->GetMatchTimeLimit();
 		}
 	}
+	// 매치 시간에서 서버-클라이언트 지연시간을 제외하여 서버와 시간 동기화
 	InitialTime = LimitTime - ServerTime;
 
 	DisplayTimerDelegate.BindUObject(this, &UEPTimerWidget::UpdateTimeDisplay);
-
 }
 
 void UEPTimerWidget::StartTimeDisplay()
 {
 	UpdateTimeDisplay(); // 최초 시간 출력
 
+	// 1초마다 시간 업데이트
 	GetWorld()->GetTimerManager().SetTimer(DisplayTimerHandle, DisplayTimerDelegate, 1.0f, true, -1.0f);
 }
 

@@ -6,6 +6,10 @@
 #include "GameFramework/PlayerState.h"
 #include "EPPlayerState.generated.h"
 
+/**
+ * 본 게임에서 플레이어 개인의 정보를 저장하는 플레이어 스테이트.
+ * Kill & Death를 저장하며 스코어보드 업데이트에 사용된다.
+ */
 
 UCLASS()
 class EXPLOSION_API AEPPlayerState : public APlayerState
@@ -15,35 +19,29 @@ class EXPLOSION_API AEPPlayerState : public APlayerState
 public:
 	AEPPlayerState();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	//virtual FString GetPlayerNameCustom() const override;
 
-public:	
-	int32 GetKillCount() { return KillCount; };
-	int32 GetDeathCount() { return DeathCount; };
-	void AddKillCount() { ++KillCount; };
-	void AddDeathCount() { ++DeathCount; };
-
-	void SetIsKillCountReplicated(bool bIsReplicated) { bKillCountReplicated = bIsReplicated; };
-	void SetIsDeathCountReplicated(bool bIsReplicated) { bDeathCountReplicated = bIsReplicated; };
-	bool GetIsKillCountReplicated() const { return bKillCountReplicated; };
-	bool GetIsDeathCountReplicated() const { return bDeathCountReplicated; };
-
+// Replicate
+public:
+	/* KillCount가 업데이트 되면 로컬 컨트롤러의 스코어보드 업데이트*/
 	UFUNCTION()
 	void OnRep_UpdateKillCount();
-	
+
+	/* DeathCount가 업데이트 되면 로컬 컨트롤러의 스코어보드 업데이트*/
 	UFUNCTION()
 	void OnRep_UpdateDeathCount();
 
 private:
-	//UPROPERTY(Replicated)
 	UPROPERTY(ReplicatedUsing = OnRep_UpdateKillCount)
 	int32 KillCount;
 
-	//UPROPERTY(Replicated)
 	UPROPERTY(ReplicatedUsing = OnRep_UpdateDeathCount)
 	int32 DeathCount;
 
-private: 
-	uint8 bKillCountReplicated : 1;
-	uint8 bDeathCountReplicated : 1;
+// Get & Set
+public:	
+	int32 GetKillCount() { return KillCount; };
+	int32 GetDeathCount() { return DeathCount; };
+
+	void AddKillCount() { ++KillCount; };
+	void AddDeathCount() { ++DeathCount; };
 };

@@ -7,7 +7,6 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "EPMultiplayerSessionSubsystem.generated.h"
 
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnCreateSessionComplete, bool, bWasSuccesssful);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionComplete, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bwasSuccessful);
 DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerOnJoinSessionComplete, EOnJoinSessionCompleteResult::Type Result);
@@ -15,6 +14,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnDestroySessionComplete, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMultiPlayerOnSessionParticipantJoined);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMultiPlayerOnSessionParticipantLeft);
+
+/**
+ * 언리얼 온라인 서브시스템을 관리하고 사용하기 위한 게임 인스턴스 서브시스템.
+ */
 
 UCLASS()
 class EXPLOSION_API UEPMultiplayerSessionSubsystem : public UGameInstanceSubsystem
@@ -24,6 +27,7 @@ class EXPLOSION_API UEPMultiplayerSessionSubsystem : public UGameInstanceSubsyst
 public:
 	UEPMultiplayerSessionSubsystem();
 
+	/* */
 	void CreateSession(int32 NumPublicConnections, FString MatchType);
 	void FindSession(int32 MaxSearchResults);
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
@@ -65,9 +69,10 @@ private:
 	int32 LastNumPublicConnections;
 	FString LastMatchType;
 
-
-	// OnlineSessionSubsystem에서 사용되는 대리자들이다.
-	// 해당 결과를 받아 내부 대리자로 전달하여 사용할 것.
+	/*
+	* OnlineSessionSubsystem에서 사용되는 대리자들이다.
+	* 해당 결과를 받아 내부 대리자로 전달하여 사용할 것.
+	*/
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FDelegateHandle CreateSessionCompleteDelegateHandle;
 

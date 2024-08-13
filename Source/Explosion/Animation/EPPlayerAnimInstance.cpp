@@ -7,18 +7,24 @@
 
 UEPPlayerAnimInstance::UEPPlayerAnimInstance()
 {
+	// 임계값 이하의 움직임은 정지 상태로 간주
 	MovementThreshold = 20.0f;
 	JumpingThreshold = 100.0f;
+
+	MovingVelocity = FVector::ZeroVector;
+	GroundSpeed = 0.0f;
+	Angle = 0.0f;
+	ControllerPitch = 0.0f;
 }
 
 void UEPPlayerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	Character = Cast<AEPCharacterPlayer>(GetOwningActor());
-	if (Character)
+	EPCharacter = Cast<AEPCharacterPlayer>(GetOwningActor());
+	if (EPCharacter)
 	{
-		CharacterMovementComponent = Character->GetCharacterMovement();
+		CharacterMovementComponent = EPCharacter->GetCharacterMovement();
 	}
 }
 
@@ -28,22 +34,26 @@ void UEPPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Super::NativeUpdateAnimation(DeltaSeconds);
 	if (CharacterMovementComponent) 
 	{
-		// 캐릭터 평면 움직임
-		Velocity = CharacterMovementComponent->Velocity;
-		GroundSpeed = Velocity.Size2D();
-		FTransform CharacterTransform = Character->GetActorTransform();
-		FVector CharacterLocalXDirection = CharacterTransform.InverseTransformVectorNoScale(Velocity);
+		// 캐릭터의 평면 이동 속도
+		MovingVelocity = CharacterMovementComponent->Velocity;
+		GroundSpeed = MovingVelocity.Size2D();
+
+		// 캐릭터의 정면 기준 이동 방향
+		FTransform CharacterTransform = EPCharacter->GetActorTransform();
+		FVector CharacterLocalXDirection = CharacterTransform.InverseTransformVectorNoScale(MovingVelocity);
 		Angle = CharacterLocalXDirection.ToOrientationRotator().Yaw;
 
+		// 임계 이하 움직임은 정지 상태로 간주
 		bIsMoving = GroundSpeed > MovementThreshold;
 
-		// Jump
+		// 점프
 		bIsFalling = CharacterMovementComponent->IsFalling();
-		bIsJumping = bIsFalling & (Velocity.Z > JumpingThreshold);
+		bIsJumping = bIsFalling & (MovingVelocity.Z > JumpingThreshold);
 
-		// Aim
-		FRotator Delta = Character->GetControlRotation() - Character->GetActorRotation();
+		// 에임 오프셋용 컨트롤러 피치
+		FRotator Delta = EPCharacter->GetControlRotation() - EPCharacter->GetActorRotation();
 		Delta.Normalize();
 		ControllerPitch = Delta.Pitch;
 	}
 }
+

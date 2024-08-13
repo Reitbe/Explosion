@@ -6,7 +6,13 @@
 #include "Blueprint/UserWidget.h"
 #include "EPBasicTextWidget.generated.h"
 
+class UTextBlock;
 
+/**
+ * 다용도로 사용 가능한 기본 텍스트 위젯.
+ * 텍스트 내용과 색상을 설정할 수 있다.
+ */
+ 
 UCLASS()
 class EXPLOSION_API UEPBasicTextWidget : public UUserWidget
 {
@@ -20,5 +26,5 @@ public:
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<class UTextBlock> BasicTextBlock;
+	TObjectPtr<UTextBlock> BasicTextBlock;
 };

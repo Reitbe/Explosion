@@ -8,9 +8,9 @@ void UAnimNotify_Reloading::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 
-	AEPCharacterBase* Character = Cast<AEPCharacterBase>(MeshComp->GetOwner());
-	if (Character)
+	AEPCharacterBase* EPCharacter = Cast<AEPCharacterBase>(MeshComp->GetOwner());
+	if (EPCharacter)
 	{
-		Character->OnReloadingBombDelegate.Execute();
+		EPCharacter->OnReloadingBombDelegate.Execute();
 	}
 }

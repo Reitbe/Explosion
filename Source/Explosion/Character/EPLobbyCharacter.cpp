@@ -5,12 +5,11 @@
 #include "Explosion/Player/EPLobbyPlayerController.h"
 
 
-// Sets default values
 AEPLobbyCharacter::AEPLobbyCharacter()
 {
+	PrimaryActorTick.bCanEverTick = false;
 }
 
-// Called when the game starts or when spawned
 void AEPLobbyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -20,10 +19,4 @@ void AEPLobbyCharacter::BeginPlay()
 	DisableInput(LBPlayerController);
 }
 
-// Called every frame
-void AEPLobbyCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
 

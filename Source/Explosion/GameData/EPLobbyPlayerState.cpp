@@ -12,6 +12,5 @@ AEPLobbyPlayerState::AEPLobbyPlayerState()
 void AEPLobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
 	DOREPLIFETIME(AEPLobbyPlayerState, bIsReady);
 }

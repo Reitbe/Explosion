@@ -2,8 +2,8 @@
 
 
 #include "EPHUDWidget.h"
-#include "Explosion/UI/EPHpBarWidget.h"
 #include "Explosion/UI/EPTimerWidget.h"
+#include "Explosion/UI/EPHpBarWidget.h"
 #include "Components/ProgressBar.h"
 
 void UEPHUDWidget::NativeConstruct()

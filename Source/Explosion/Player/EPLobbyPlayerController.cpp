@@ -12,7 +12,6 @@
 
 AEPLobbyPlayerController::AEPLobbyPlayerController()
 {
-	// 위젯
 	static ConstructorHelpers::FClassFinder<UEPMainMenuWidget> MainMenuWidgetClassFinder
 	(TEXT("/Game/UI/WBP_MainMenuWidget.WBP_MainMenuWidget_C"));
 	if (MainMenuWidgetClassFinder.Class)
@@ -27,14 +26,12 @@ AEPLobbyPlayerController::AEPLobbyPlayerController()
 		LobbyWidgetClass = LobbyWidgetClassFinder.Class;
 	}
 
+	// 석상의 활성화를 관리할 석상 매니저
 	StatueManager = CreateDefaultSubobject<UEPLobbyStatueManager>(TEXT("BombManager"));
 }
 
 void AEPLobbyPlayerController::BeginPlay()
 {
-	SetInputMode(FInputModeUIOnly());
-	bShowMouseCursor = true;
-
 	if (IsLocalController())
 	{
 		if (MainMenuWidgetClass)
@@ -57,12 +54,13 @@ void AEPLobbyPlayerController::BeginPlay()
 			MultiplayerSessionSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &AEPLobbyPlayerController::OnCreateSessionComplete);
 
 			FString SessionState = MultiplayerSessionSubsystem->GetSessionState();
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("SessionState: %s"), *SessionState));
 
+			// 세션이 존재하지 않으면 메인 메뉴에 있다고 판단하여 UI 관리
 			if (SessionState == FString(TEXT("NoSession")))
 			{
 				MainMenuWidget->SetVisibility(ESlateVisibility::Visible);
 			}
+			// 그렇지 않은 경우(InProgress, Pending)는 로비에 있다고 판단하여 UI관리
 			else
 			{
 				LobbyWidget->SetVisibility(ESlateVisibility::Visible);
@@ -71,19 +69,12 @@ void AEPLobbyPlayerController::BeginPlay()
 			if (StatueManager)
 			{
 				StatueManager->GetAllLobbyStatue();
-				//if (SessionState == FString(TEXT("NoSession")))
-				//{
-				//	StatueManager->UpdateLobbyStatue(true);
-				//}
-				//else
-				//{
-				//	StatueManager->UpdateLobbyStatue(false);
-				//}
 			}
 		}
-
-	ConsoleCommand(TEXT("stat fps"), true);
 	}
+
+	SetInputMode(FInputModeUIOnly());
+	bShowMouseCursor = true;
 }
 
 void AEPLobbyPlayerController::OnCreateSessionComplete(bool bWasSuccesssful)
@@ -92,31 +83,33 @@ void AEPLobbyPlayerController::OnCreateSessionComplete(bool bWasSuccesssful)
 	{
 		MainMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
 		LobbyWidget->SetVisibility(ESlateVisibility::Visible);
-		// 로비 UI 띄우기
-
-		//SetInputMode(FInputModeGameOnly());
-		//bShowMouseCursor = false;
 	}
 }
 
 void AEPLobbyPlayerController::ServerRPC_SetReady_Implementation()
 {
+	// 플레이어 스테이트의 준비상태를 변경
 	AEPLobbyPlayerState* LobbyPlayerState = GetPlayerState<AEPLobbyPlayerState>();
 	if(LobbyPlayerState)
 	{
 		LobbyPlayerState->SetIsReady(true);
 	}
 
+	// 본 플레이어가 준비되었음을 게임모드에 전달.
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
-	AEPLobbyGameMode* LobbyGameMode = Cast<AEPLobbyGameMode>(GameMode);
-	if (LobbyGameMode)
+	if (GameMode)
 	{
-		LobbyGameMode->UpdatePlayerCount();
+		AEPLobbyGameMode* LobbyGameMode = Cast<AEPLobbyGameMode>(GameMode);
+		if (LobbyGameMode)
+		{
+			LobbyGameMode->UpdateReadyPlayerCount();
+		}
 	}
 }
 
 void AEPLobbyPlayerController::ClientRPC_UpdatePalyerCount_Implementation(int32 PlayerInSession, int32 MaxPlayer)
 {
+	// 서버로부터 현재 게임에 참가한 인원과 최대 참여 가능 인원을 전달받아 UI를 업데이트
 	if (LobbyWidget)
 	{
 		LobbyWidget->SetPlayerCount(PlayerInSession, MaxPlayer);
@@ -125,22 +118,17 @@ void AEPLobbyPlayerController::ClientRPC_UpdatePalyerCount_Implementation(int32 
 
 void AEPLobbyPlayerController::SetReady()
 {
+	// 클라이언트에서 준비가 되었음을 서버에게 알림
 	if (IsLocalController())
 	{
 		ServerRPC_SetReady();
 	}
 }
 
-void AEPLobbyPlayerController::StartSession()
-{
-	MultiplayerSessionSubsystem->StartSession();
-}
-
 void AEPLobbyPlayerController::ClientRPC_UpdateLobbyStatue_Implementation(bool IsOnMainMenu)
 {
 	if (IsLocalController() && StatueManager)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("플컨 - UpdateStatue 호출")));
 		StatueManager->UpdateLobbyStatue(IsOnMainMenu);
 	}
 }

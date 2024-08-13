@@ -38,63 +38,43 @@ AEPLobbyGameMode::AEPLobbyGameMode()
 		PlayerStateClass = PlayerStateClassFinder.Class;
 	}
 
-	//static ConstructorHelpers::FClassFinder<AEPLobbyStatue> LobbyStatueClassFinder
-	//(TEXT("/Game/Map/BP_LobbyStatueWithPedestal.BP_LobbyStatueWithPedestal_C"));
-	//if (LobbyStatueClassFinder.Class)
-	//{
-	//	LobbyStatueWithPedestalsClass = LobbyStatueClassFinder.Class;
-	//}
-
-	//MainGameMapName = "/Game/Map/TravelTest.TravelTest?listen";
 	MainGameMapName = "BattleRoyalMap?listen";
 
 	ReadyPlayerCount = 0;
 	MaxPlayers = 0;
 	bIsFirstLoginCompleted = false;
 
+	// 심리스 트래블을 사용하지 않는다!! 게임모드부터 모든 것을 새로 생성하기 위함이다. 
 	bUseSeamlessTravel = false;
 }
 
 void AEPLobbyGameMode::StartPlay()
 {
 	Super::StartPlay();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("스타트 플레이 시작")));
-	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), LobbyStatueWithPedestalsClass, LobbyStatueWithPedestalsArray);
 
+	// 서버 유저의 PostLogin은 이미 실행되었으므로 이후의 로그인에서 석상 업데이트를 허용하기 위함. 
 	bIsFirstLoginCompleted = true;
+
 	MultiplayerSessionSubsystem = GetGameInstance()->GetSubsystem<UEPMultiplayerSessionSubsystem>();
-	if (MultiplayerSessionSubsystem)
-	{
-		MultiplayerSessionSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &AEPLobbyGameMode::OnCreateSessionComplete);
-		MultiplayerSessionSubsystem->MultiPlayerOnSessionParticipantJoined.AddDynamic(this, &AEPLobbyGameMode::OnSessionParticipantJoined);
-		MultiplayerSessionSubsystem->MultiPlayerOnSessionParticipantLeft.AddDynamic(this, &AEPLobbyGameMode::OnSessionParticipantLeft);
 
-		// 모든 석상이 로드된 이후 최초의 석상 업데이트
-		UpdateLobbyStatue();
-	}
-
+	// 모든 석상이 로드된 이후 최초의 석상 업데이트
+	UpdateLobbyStatue();
 }
 
 void AEPLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	// 첫 로그인(본인)에 석상이 로드되지 않았으므로 업데이트를 하지 않음
+	// 서버 본인의 첫 로그인 시점에는 석상이 로드되지 않았으므로 석상 업데이트를 하지 않는다.
 	if (bIsFirstLoginCompleted) 
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("PostLogin에서 로비 석상 업데이트 호출")));
 		UpdateLobbyStatue();
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("PostLogin이지만 세션 안맏르어져서 호출 안함.")));
 	}
 }
 
 void AEPLobbyGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Logout!!")));
 
 	if (bIsFirstLoginCompleted)
 	{
@@ -102,32 +82,7 @@ void AEPLobbyGameMode::Logout(AController* Exiting)
 	}
 }
 
-void AEPLobbyGameMode::OnCreateSessionComplete(bool bWasSuccessful)
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("게임모드 세션 컴플맅트 실행.")));
-	if (MultiplayerSessionSubsystem)
-	{
-		MaxPlayers = 0;
-		ReadyPlayerCount = 0;
-		//bIsFirstLoginCompleted = true;
-	}
-}
-
-
-void AEPLobbyGameMode::OnSessionParticipantJoined()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("새로운 멤버가 들어왔습니다.")));
-	//UpdateLobbyStatue();
-}
-
-void AEPLobbyGameMode::OnSessionParticipantLeft()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("멤버가 나갔습니다.")));
-	//UpdateLobbyStatue();
-}
-
-
-void AEPLobbyGameMode::UpdatePlayerCount()
+void AEPLobbyGameMode::UpdateReadyPlayerCount()
 {
 	ReadyPlayerCount = 0;
 
@@ -145,7 +100,7 @@ void AEPLobbyGameMode::UpdatePlayerCount()
 		}
 	}
 
-	// 세션 참가 가능한 최대 인원 수 확인
+	// 세션에서 함께 플레이할 수 있는 최대 인원 수 확인
 	if (MultiplayerSessionSubsystem)
 	{
 		FNamedOnlineSession* Session = MultiplayerSessionSubsystem->GetSession();
@@ -166,23 +121,29 @@ void AEPLobbyGameMode::UpdatePlayerCount()
 		}
 	}
 
-	// 플레이어 수 확인 후 시작
-	if (ReadyPlayerCount >= MaxPlayers) // 임의로 1로 설정. 혼자서 레디하면 게임 하게끔. 
+	CheckStartMainGame();
+}
+
+void AEPLobbyGameMode::CheckStartMainGame()
+{
+	// 모든 플레이어가 준비되었을 때, 약간의 유예를 두고 메인 게임을 시작한다.
+	if (ReadyPlayerCount >= MaxPlayers)
 	{
 		FTimerHandle StartMainGameTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(StartMainGameTimerHandle, this, &AEPLobbyGameMode::StartMainGame, 2.0f, false);
+		GetWorld()->GetTimerManager().SetTimer(StartMainGameTimerHandle, this, &AEPLobbyGameMode::StartMainGame, 1.0f, false);
 	}
 }
 
 
-
 void AEPLobbyGameMode::UpdateLobbyStatue()
 {
-	bool bIsOnMainMenu = false;
+	/*
+	* 세션 스테이트를 기반으로 메인화면과 로비 화면을 구분한다.
+	* 세션이 진행중인 경우 InProgress(서버) or Pending(클라이언트) 상태이며
+	* 세션이 진행중이 아닌 경우 NoSession 상태이다.
+	*/
 	FString SessionState = MultiplayerSessionSubsystem->GetSessionState();
-	
-	// 메인화면(NoSession)인 경우 석상 전체 비활성화
-	bIsOnMainMenu = (SessionState != FString(TEXT("InProgress")) && SessionState != FString(TEXT("Pending"))) ? true : false;
+	bool bIsOnMainMenu = (SessionState != FString(TEXT("InProgress")) && SessionState != FString(TEXT("Pending"))) ? true : false;
 	
 
 	// 전체 플레이어에 대하여 석상 활성화
@@ -200,81 +161,15 @@ void AEPLobbyGameMode::UpdateLobbyStatue()
 	}
 }
 
-// 서버트래블이 어디서 안되는지 테스트용
-bool AEPLobbyGameMode::CanServerTravel(const FString& FURL, bool bAbsolute)
-{
-	UWorld* World = GetWorld();
-
-	check(World);
-
-	if (FURL.Contains(TEXT("%")))
-	{
-		UE_LOG(LogGameMode, Error, TEXT("CanServerTravel: FURL %s Contains illegal character '%%'."), *FURL);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("URL에 '%%'들어가서 실패")));
-		return false;
-	}
-
-	if (FURL.Contains(TEXT(":")) || FURL.Contains(TEXT("\\")))
-	{
-		UE_LOG(LogGameMode, Error, TEXT("CanServerTravel: FURL %s blocked, contains : or \\"), *FURL);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("URL에 ':' or '\\'들어가서 실패")));
-		return false;
-	}
-
-	FString MapName;
-	int32 OptionStart = FURL.Find(TEXT("?"));
-	if (OptionStart == INDEX_NONE)
-	{
-		MapName = FURL;
-	}
-	else
-	{
-		MapName = FURL.Left(OptionStart);
-	}
-
-	// Check for invalid package names.
-	FText InvalidPackageError;
-	if (MapName.StartsWith(TEXT("/")) && !FPackageName::IsValidLongPackageName(MapName, true, &InvalidPackageError))
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("CanServerTravel: FURL %s blocked (%s)"), *FURL, *InvalidPackageError.ToString()));
-		return false;
-	}
-
-	return true;
-}
-
 void AEPLobbyGameMode::StartMainGame()
 {
-	// 현재 게임 참가자 수를 다음 게임모드에 전달하기 위한 저장
+	// 현재 로비에 참가한 총 플레이어 수를 저장하여 다음 레벨에서 사용할 수 있게끔 저장한다.
 	UEPGameInstance* EPGameInstance = Cast<UEPGameInstance>(GetGameInstance());
 	if (EPGameInstance)
 	{
 		EPGameInstance->SetPlayerCount(MaxPlayers);
-
-		int32 Temp = EPGameInstance->GetPlayerCount();
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("플레이어 수 : %d"), Temp));
 	}
 
-	
-
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("서버트래블 시도합니다.")));
-
-	if (CanServerTravel(MainGameMapName, true))
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("자체 조사 성공")));
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("자체조사 실패")));
-	}
-
-	if (GetWorld()->ServerTravel(MainGameMapName, true))
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("서버트래블 성공!!")));
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("서버트래블 실패!!")));
-	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("서버트래블 이후")));
+	// 서버트래블
+	GetWorld()->ServerTravel(MainGameMapName, true);
 }
