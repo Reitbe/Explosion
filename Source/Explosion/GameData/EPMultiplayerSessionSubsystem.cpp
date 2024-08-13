@@ -29,7 +29,7 @@ void UEPMultiplayerSessionSubsystem::CreateSession(int32 NumPublicConnections, F
 		return;
 	}
 	
-	// 세션은 존재 확인
+	// 기존 세션이 존재한다면 파괴하기
 	auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
 	if (ExistingSession != nullptr)
 	{
@@ -40,10 +40,9 @@ void UEPMultiplayerSessionSubsystem::CreateSession(int32 NumPublicConnections, F
 		DestroySession();
 	}
 
-	// Add CreateSessionCompleteDelegate to the session interface delegate list.
 	CreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
 
-	// Setting options for a new session
+	// 생성할 세션 설정
 	LastSessionSettings = MakeShareable(new FOnlineSessionSettings());
 	LastSessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : bIsLANMatchChecked; // 서브시스템이 연결되어있지 않다면 LAN 확정, 아니라면 bIsLANMatchChecked 값으로 설정
 	LastSessionSettings->NumPublicConnections = NumPublicConnections; // 2 or 4 지정
@@ -55,14 +54,11 @@ void UEPMultiplayerSessionSubsystem::CreateSession(int32 NumPublicConnections, F
 	LastSessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	LastSessionSettings->BuildUniqueId = 1;
 
-	// Create Session
+	// 앞서 설정한 정보로 세션 생성
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	if (!SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *LastSessionSettings)) // 첫 인자는 FOnlineSessionSteam에서 HostingPlayerNum = 0으로 대체된다.
 	{
-		// Remove the delegate from the delegate list using the handle.
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
-
-		// Broadcast that the session creation has failed.
 		MultiplayerOnCreateSessionComplete.Broadcast(false);
 	}
 }
@@ -74,24 +70,20 @@ void UEPMultiplayerSessionSubsystem::FindSession(int32 MaxSearchResults)
 		return;
 	}
 
-	// Add FindSessionCompleteDelegate to the session interface delegate list.
 	FindSessionCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionCompleteDelegate);
 
-	// Setting session search options
+	// 탐색할 세션 옵션 설정
 	LastSessionSearch = MakeShareable(new FOnlineSessionSearch);
 	LastSessionSearch->MaxSearchResults = MaxSearchResults;
 	LastSessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : bIsLANMatchChecked;
 	LastSessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
-	// Find sessions
+	// 세션 탐색
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	if (!SessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), LastSessionSearch.ToSharedRef()))
 	{
-		// Clear the delegate from the delegate list
 		SessionInterface->ClearOnCancelFindSessionsCompleteDelegate_Handle(FindSessionCompleteDelegateHandle);
-		// Broadcast the result 
 		MultiplayerOnFindSessionComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
-
 	}
 }
 
@@ -103,15 +95,13 @@ void UEPMultiplayerSessionSubsystem::JoinSession(const FOnlineSessionSearchResul
 		return;
 	}
 
-	// Add JoinSessionCompleteDelegate to the session interface delegate list.
 	JoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
 
+	// 세션 참가
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	if (!SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionResult))
 	{
-		// Clear the delegate from the delegate list
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
-		// Broadcast the result 
 		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
 	}
 }
@@ -124,6 +114,7 @@ void UEPMultiplayerSessionSubsystem::StartSession()
 		return;
 	}
 
+	// 세션 시작 
 	StartSessionCompleteDelegateHandle = SessionInterface->AddOnStartSessionCompleteDelegate_Handle(StartSessionCompletetDelegate);
 	if (!SessionInterface->StartSession(NAME_GameSession))
 	{
@@ -140,14 +131,12 @@ void UEPMultiplayerSessionSubsystem::DestroySession()
 		return;
 	}
 
-	// Add DestroySessionCompleteDelegate to the session interface delegate list.
 	DestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteDelegate);
 
+	// 세션 파괴
 	if (!SessionInterface->DestroySession(NAME_GameSession))
 	{
-		// Clear the delegate from the delegate list
 		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteDelegateHandle);
-		// Broadcast the result 
 		MultiplayerOnDestroySessionComplete.Broadcast(false);
 	}
 }
@@ -194,16 +183,9 @@ void UEPMultiplayerSessionSubsystem::OnCreateSessionComplete(FName SessionName, 
 {
 	if (SessionInterface)
 	{
-		// Claer the delegate from the delegate list using the handle
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 	}
 
-	if (bWasSuccessful)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("세션 생성 성공!! : %s"), *SessionName.ToString()));
-	}
-
-	// Broadcast a success message for the session creation.
 	MultiplayerOnCreateSessionComplete.Broadcast(true);
 }
 
@@ -211,18 +193,16 @@ void UEPMultiplayerSessionSubsystem::OnFindSessionComplete(bool bWasSuccessful)
 {
 	if (SessionInterface)
 	{
-		// Claer the delegate from the delegate list using the handle
 		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionCompleteDelegateHandle);
 	}
 
 	if (LastSessionSearch->SearchResults.Num() <= 0)
 	{
-		// Session results was empty => false
+		// 세션 탐색 결과가 없을 경우
 		MultiplayerOnFindSessionComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
 		return;
 	}
 
-	// Broadcast a success message for the session finding.
 	MultiplayerOnFindSessionComplete.Broadcast(LastSessionSearch->SearchResults, bWasSuccessful);
 }
 
@@ -230,7 +210,6 @@ void UEPMultiplayerSessionSubsystem::OnJoinSessionComplete(FName SessionName, EO
 {
 	if (SessionInterface)
 	{
-		// Claer the delegate from the delegate list using the handle
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
 	}
 
@@ -239,31 +218,6 @@ void UEPMultiplayerSessionSubsystem::OnJoinSessionComplete(FName SessionName, EO
 		return;
 	}
 
-	//if (Result == EOnJoinSessionCompleteResult::UnknownError)
-	//{
-	//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("조인 세션 실패함."));
-	//	return;
-	//}
-	//if (Result == EOnJoinSessionCompleteResult::Success)
-	//{
-	//	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("조인 세션 성공함."));
-
-	//	FString Address;
-	//	if (SessionInterface->GetResolvedConnectString(SessionName, Address))
-	//	{
-	//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("세션이름 : %s"), *SessionName.ToString()));
-	//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("주소 : %s"), *Address));
-
-	//		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-	//		if (PlayerController)
-	//		{
-	//			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
-	//		}
-	//	}
-	//}
-
-
-	// Broadcast a message for the session joining with the result.
 	MultiplayerOnJoinSessionComplete.Broadcast(Result);
 }
 

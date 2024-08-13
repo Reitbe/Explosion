@@ -102,7 +102,7 @@ void AEPLobbyPlayerController::ServerRPC_SetReady_Implementation()
 		AEPLobbyGameMode* LobbyGameMode = Cast<AEPLobbyGameMode>(GameMode);
 		if (LobbyGameMode)
 		{
-			LobbyGameMode->UpdatePlayerCount();
+			LobbyGameMode->UpdateReadyPlayerCount();
 		}
 	}
 }
