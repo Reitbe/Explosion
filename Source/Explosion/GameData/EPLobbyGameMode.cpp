@@ -75,11 +75,7 @@ void AEPLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 void AEPLobbyGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
-
-	if (bIsFirstLoginCompleted)
-	{
-		UpdateLobbyStatue();
-	}
+	UpdateLobbyStatue();
 }
 
 void AEPLobbyGameMode::UpdateReadyPlayerCount()
@@ -146,7 +142,7 @@ void AEPLobbyGameMode::UpdateLobbyStatue()
 	bool bIsOnMainMenu = (SessionState != FString(TEXT("InProgress")) && SessionState != FString(TEXT("Pending"))) ? true : false;
 	
 
-	// 전체 플레이어에 대하여 석상 활성화
+	// 전체 플레이어에 대하여 석상 활성화 업데이트
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PlayerController = It->Get();
