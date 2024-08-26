@@ -101,4 +101,4 @@
 
 
 ## 🕹️ 인게임 화면
-[![포트폴리오 영상](/ReadMeSource/youtube_thumbnail.png)]([https://youtu.be/zAkzgQ9c_IA?si=z_7aVDKqbU_w4EFW](https://youtu.be/0zBQWa4tcEE?si=iIyauxeXM3E_lVuQ](https://youtu.be/0zBQWa4tcEE?si=iIyauxeXM3E_lVuQ))
+[![포트폴리오 영상](/ReadMeSource/youtube_thumbnail.png)](https://youtu.be/0zBQWa4tcEE?si=OKgr1P8ftiUFI7M)
