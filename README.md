@@ -12,7 +12,7 @@
 - **Unreal Engine 5를 사용한 PC(Windows) 기반 3인칭 멀티플레이 슈팅 게임.**
 - 총을 쏘는 것이 아닌, 폭탄을 던져서 적을 제거하고 점수를 얻어 승리하는 게임입니다.
 - Unreal Engine 5의 기본 프레임워크와 멀티플레이 메커니즘 경험을 목표로 삼았으며, 대부분의 기능은 C++을 이용해 제작했습니다.
-- [해당 구글 드라이브](https://drive.google.com/file/d/1fCWIOW3NJImwqDzSiGcBEs3ZaiulD7qz/view?usp=drive_link)(491MB)에서 게임 실행 파일을 다운로드하실 수 있습니다. 유료 에셋(POLYGON_AncientEmpire)을 사용하였기에 Github에는 소스코드 관련 파일들만 업로드되었습니다.
+- [해당 구글 드라이브](https://drive.google.com/file/d/1bilkgVFJ_O5HckQhz9qo_-21fHhYLn7b/view?usp=drive_link)(447MB)에서 게임 실행 파일을 다운로드하실 수 있습니다. 유료 에셋(POLYGON_AncientEmpire)을 사용하였기에 Github에는 소스코드 관련 파일들만 업로드되었습니다.
 - 본 게임은 언리얼의 온라인 서브시스템을 사용합니다. 스팀 클라이언트에 로그인한 후 게임 파일을 실행하시면 다른 컴퓨터의 스팀 유저와 함께 플레이하실 수 있습니다. 혼자는 안됩니다!
 - 조작법
     - W, S, A, D - 전후좌우 이동
